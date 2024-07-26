@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using Unmanaged;
 using Unmanaged.Collections;
 using static SDL.SDL;
 
@@ -161,10 +162,18 @@ namespace SDL
             SDL_SetHint(name, value);
         }
 
-        public readonly string[] GetVulkanInstanceExtensions()
+        public readonly FixedString[] GetVulkanInstanceExtensions()
         {
             ThrowIfDisposed();
-            return SDL_Vulkan_GetInstanceExtensions();
+
+            string[] extensionNames = SDL_Vulkan_GetInstanceExtensions();
+            Span<FixedString> extensions = stackalloc FixedString[extensionNames.Length];
+            for (int i = 0; i < extensionNames.Length; i++)
+            {
+                extensions[i] = new(extensionNames[i]);
+            }
+
+            return extensions.ToArray();
         }
 
         public readonly SDL3Window GetWindow(uint windowId)

@@ -1,8 +1,11 @@
-﻿using Simulation;
+﻿using Rendering;
+using Rendering.Components;
 using SDL;
+using Simulation;
 using System;
 using System.Diagnostics;
 using System.Numerics;
+using Unmanaged;
 using Unmanaged.Collections;
 using Windows.Components;
 using Windows.Events;
@@ -354,7 +357,7 @@ namespace Windows.Systems
         /// </summary>
         private void UpdateWindows()
         {
-            DestroyWindowsForDestroyedEntities();
+            DestroyOldWindows();
 
             //create new windows and update existing ones
             windowQuery.Fill();
@@ -376,7 +379,7 @@ namespace Windows.Systems
             }
         }
 
-        private void DestroyWindowsForDestroyedEntities()
+        private void DestroyOldWindows()
         {
             for (uint i = 0; i < windowEntities.Count; i++)
             {
@@ -426,6 +429,29 @@ namespace Windows.Systems
             if (!world.TryGetComponent(entity, out WindowSize size))
             {
                 throw new NullReferenceException($"Window {entity} is missing expected {typeof(WindowSize)} component");
+            }
+
+            //add extensions
+            IsDestination destination = world.GetComponent<IsDestination>(entity);
+            if (destination.rendererLabel != default)
+            {
+                UnmanagedList<Destination.Extension> extensions = world.GetList<Destination.Extension>(entity);
+                if (destination.rendererLabel == "vulkan")
+                {
+                    FixedString[] sdlVulkanExtensions = library.GetVulkanInstanceExtensions();
+                    foreach (FixedString extension in sdlVulkanExtensions)
+                    {
+                        extensions.Add(new(extension));
+                    }
+                }
+                else if (destination.rendererLabel == "dx3d")
+                {
+
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Unknown renderer label '{destination.rendererLabel}'");
+                }
             }
 
             return new(buffer[..window.title.Length], size.width, size.height, flags);
