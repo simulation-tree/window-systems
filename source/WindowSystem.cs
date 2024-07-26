@@ -265,7 +265,7 @@ namespace Windows.Systems
                     Mouse mouse = GetOrCreateMouse(mouseId);
                     TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.button.timestamp);
                     uint control = (uint)sdlEvent.button.button;
-                    mouse.SetButtonDown((Mouse.Button)control, true, timeStamp);
+                    mouse.SetButtonDown(control, true, timeStamp);
                     world.Submit(DeviceButtonPressed.Create(mouse, control));
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseButtonUp)
@@ -274,7 +274,7 @@ namespace Windows.Systems
                     Mouse mouse = GetOrCreateMouse(mouseId);
                     TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.button.timestamp);
                     uint control = (uint)sdlEvent.button.button;
-                    mouse.SetButtonDown((Mouse.Button)control, false, timeStamp);
+                    mouse.SetButtonDown(control, false, timeStamp);
                     world.Submit(DeviceButtonReleased.Create(mouse, control));
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseAdded)
