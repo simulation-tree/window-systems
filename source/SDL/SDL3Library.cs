@@ -46,7 +46,7 @@ namespace SDL
             }
 
             SDL_GetVersion(out version);
-            platform = new(SDL_GetPlatformString());
+            platform = new(SDL_GetPlatformString().AsSpan());
             SDL_SetLogOutputFunction(LogSDLOutput);
         }
 

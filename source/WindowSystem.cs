@@ -14,7 +14,7 @@ namespace Windows.Systems
         public readonly SDL3Library library;
 
         private readonly Query<IsWindow> windowQuery;
-        private readonly UnmanagedList<EntityID> windowEntities;
+        private readonly UnmanagedList<eint> windowEntities;
         private readonly UnmanagedList<uint> windowIds;
         private readonly UnmanagedList<WindowPosition> lastWindowPositions;
         private readonly UnmanagedList<WindowSize> lastWindowSizes;
@@ -87,7 +87,7 @@ namespace Windows.Systems
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
                         if (window.state == IsWindow.State.Windowed)
                         {
-                            EntityID entity = windowEntities[index];
+                            eint entity = windowEntities[index];
                             int x = sdlEvent.window.data1;
                             int y = sdlEvent.window.data2;
                             WindowPosition position = new(x, y);
@@ -114,7 +114,7 @@ namespace Windows.Systems
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
                         if (window.state == IsWindow.State.Windowed)
                         {
-                            EntityID entity = windowEntities[index];
+                            eint entity = windowEntities[index];
                             uint width = (uint)sdlEvent.window.data1;
                             uint height = (uint)sdlEvent.window.data2;
                             WindowSize size = new(width, height);
@@ -163,7 +163,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf(sdlEvent.window.windowID.Value, out uint index))
                     {
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
-                        window.flags |= IsWindow.Flags.Hidden;
+                        window.flags |= IsWindow.Flags.Minimized;
                     }
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowRestored)
@@ -171,7 +171,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf(sdlEvent.window.windowID.Value, out uint index))
                     {
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
-                        window.flags &= ~IsWindow.Flags.Hidden;
+                        window.flags &= ~IsWindow.Flags.Minimized;
                         window.state = IsWindow.State.Windowed;
                     }
                 }
@@ -296,14 +296,14 @@ namespace Windows.Systems
 
         private void UpdateLastDeviceStates()
         {
-            foreach (EntityID keyboardEntity in world.GetAll<IsKeyboard>())
+            foreach (eint keyboardEntity in world.GetAll<IsKeyboard>())
             {
                 ref LastKeyboardState lastState = ref world.GetComponentRef<LastKeyboardState>(keyboardEntity);
                 KeyboardState currentState = world.GetComponent<IsKeyboard>(keyboardEntity).state;
                 lastState = new(currentState);
             }
 
-            foreach (EntityID mouseEntity in world.GetAll<IsMouse>())
+            foreach (eint mouseEntity in world.GetAll<IsMouse>())
             {
                 ref LastMouseState lastState = ref world.GetComponentRef<LastMouseState>(mouseEntity);
                 IsMouse mouse = world.GetComponent<IsMouse>(mouseEntity);
@@ -315,7 +315,7 @@ namespace Windows.Systems
         {
             if (windowIds.TryIndexOf(windowId, out uint index))
             {
-                EntityID windowEntity = windowEntities[index];
+                eint windowEntity = windowEntities[index];
                 if (world.TryGetComponent(windowEntity, out WindowCloseCallback callback))
                 {
                     callback.Invoke(world, windowEntity);
@@ -380,7 +380,7 @@ namespace Windows.Systems
         {
             for (uint i = 0; i < windowEntities.Count; i++)
             {
-                EntityID windowEntity = windowEntities[i];
+                eint windowEntity = windowEntities[i];
                 if (!world.ContainsEntity(windowEntity))
                 {
                     SDL3Window sdlWindow = library.GetWindow(windowIds[i]);
@@ -393,20 +393,20 @@ namespace Windows.Systems
             }
         }
 
-        private SDL3Window CreateWindow(EntityID entity, IsWindow window)
+        private SDL3Window CreateWindow(eint entity, IsWindow window)
         {
             SDL_WindowFlags flags = default;
-            if (window.IsBorderless)
+            if ((window.flags & IsWindow.Flags.Borderless) != 0)
             {
                 flags |= SDL_WindowFlags.Borderless;
             }
 
-            if (window.IsResizable)
+            if ((window.flags & IsWindow.Flags.Resizable) != 0)
             {
                 flags |= SDL_WindowFlags.Resizable;
             }
 
-            if (window.IsHidden)
+            if ((window.flags & IsWindow.Flags.Minimized) != 0)
             {
                 flags |= SDL_WindowFlags.Minimized;
             }
@@ -431,7 +431,7 @@ namespace Windows.Systems
             return new(buffer[..window.title.Length], size.width, size.height, flags);
         }
 
-        public SDL3Window GetWindow(EntityID entity)
+        public SDL3Window GetWindow(eint entity)
         {
             if (windowEntities.TryIndexOf(entity, out uint index))
             {
@@ -444,7 +444,7 @@ namespace Windows.Systems
         /// <summary>
         /// Updates the SDL window to match the entity.
         /// </summary>
-        private void UpdateWindow(EntityID windowEntity, ref IsWindow window)
+        private void UpdateWindow(eint windowEntity, ref IsWindow window)
         {
             uint index = windowEntities.IndexOf(windowEntity);
             SDL3Window sdlWindow = library.GetWindow(windowIds[index]);
@@ -460,19 +460,22 @@ namespace Windows.Systems
                 lastWindowSizes[index] = size;
             }
 
-            if (sdlWindow.IsBorderless != window.IsBorderless)
+            bool borderless = (window.flags & IsWindow.Flags.Borderless) != 0;
+            bool resizable = (window.flags & IsWindow.Flags.Resizable) != 0;
+            bool minimized = (window.flags & IsWindow.Flags.Minimized) != 0;
+            if (sdlWindow.IsBorderless != borderless)
             {
-                sdlWindow.IsBorderless = window.IsBorderless;
+                sdlWindow.IsBorderless = borderless;
             }
 
-            if (sdlWindow.IsResizable != window.IsResizable)
+            if (sdlWindow.IsResizable != resizable)
             {
-                sdlWindow.IsResizable = window.IsResizable;
+                sdlWindow.IsResizable = resizable;
             }
 
-            if (sdlWindow.IsHidden != window.IsHidden)
+            if (sdlWindow.IsMinimized != minimized)
             {
-                sdlWindow.IsHidden = window.IsHidden;
+                sdlWindow.IsMinimized = minimized;
             }
 
             bool isMaximized = sdlWindow.IsMaximized;

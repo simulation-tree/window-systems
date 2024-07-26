@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using Unmanaged;
 using Windows.Components;
 using static SDL.SDL;
 
@@ -65,7 +66,7 @@ namespace SDL
             set => SDL_SetWindowFullscreen(window, value ? SDL_bool.SDL_TRUE : SDL_bool.SDL_FALSE);
         }
 
-        public readonly bool IsHidden
+        public readonly bool IsMinimized
         {
             get => (SDL_GetWindowFlags(window) & SDL_WindowFlags.Minimized) == SDL_WindowFlags.Minimized;
             set
@@ -155,6 +156,23 @@ namespace SDL
             ThrowIfDisposed();
             SDL_Surface* pointer = SDL_CreateSurface((int)width, (int)height, SDL_PixelFormatEnum.Rgba32);
             return (nint)pointer;
+        }
+
+        /// <summary>
+        /// Retrieves the names of the extensions required for surface creation.
+        /// <para>
+        /// These are used when creating Vulkan instances.
+        /// </para>
+        /// </summary>
+        public static int GetVulkanExtensionNames(Span<FixedString> buffer)
+        {
+            string[] extensionNames = SDL_Vulkan_GetInstanceExtensions();
+            for (int i = 0; i < extensionNames.Length; i++)
+            {
+                buffer[i] = extensionNames[i];
+            }
+
+            return extensionNames.Length;
         }
     }
 }
