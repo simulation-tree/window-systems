@@ -1,13 +1,12 @@
-﻿using SDL3;
-using System;
+﻿using System;
 using System.Diagnostics;
 using Unmanaged;
 using Unmanaged.Collections;
 using static SDL3.SDL3;
 
-namespace SDL
+namespace SDL3
 {
-    public unsafe readonly struct SDL3Library : IDisposable
+    public unsafe readonly struct Library : IDisposable
     {
         public readonly int version;
 
@@ -16,7 +15,7 @@ namespace SDL
         public readonly bool IsDisposed => platform.IsDisposed;
         public readonly ReadOnlySpan<char> Platform => platform.AsSpan();
 
-        public SDL3Library() : this(true, true)
+        public Library() : this(true, true)
         {
         }
 
@@ -25,11 +24,11 @@ namespace SDL
         {
             if (IsDisposed)
             {
-                throw new ObjectDisposedException(nameof(SDL3Library));
+                throw new ObjectDisposedException(nameof(Library));
             }
         }
 
-        public SDL3Library(bool video = true, bool audio = true)
+        public Library(bool video = true, bool audio = true)
         {
             SDL_InitFlags flags = SDL_InitFlags.Timer | SDL_InitFlags.Gamepad | SDL_InitFlags.Events;
             if (video)
@@ -49,7 +48,7 @@ namespace SDL
 
             version = SDL_GetVersion();
             platform = new((SDL_GetPlatform() ?? "unknown").AsSpan());
-            SDL_SetLogOutputFunction(LogSDLOutput);
+            SDL_SetLogOutputFunction(LogOutput);
         }
 
         public readonly void Dispose()
@@ -59,7 +58,7 @@ namespace SDL
             SDL_Quit();
         }
 
-        private void LogSDLOutput(SDL_LogCategory category, SDL_LogPriority priority, string message)
+        private void LogOutput(SDL_LogCategory category, SDL_LogPriority priority, string message)
         {
             ThrowIfDisposed();
             if (priority >= SDL_LogPriority.Error)

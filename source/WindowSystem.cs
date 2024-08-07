@@ -1,6 +1,5 @@
 ﻿using Rendering;
 using Rendering.Components;
-using SDL;
 using SDL3;
 using Simulation;
 using System;
@@ -15,7 +14,7 @@ namespace Windows.Systems
 {
     public class WindowSystem : SystemBase
     {
-        public readonly SDL3Library library;
+        public readonly Library library;
 
         private readonly Query<IsWindow> windowQuery;
         private readonly UnmanagedList<eint> windowEntities;
@@ -364,21 +363,41 @@ namespace Windows.Systems
 
             //create new windows and update existing ones
             windowQuery.Fill();
-            foreach (Query<IsWindow>.Result result in windowQuery)
+            foreach (var r in windowQuery)
             {
-                ref IsWindow window = ref result.Component1;
-                if (!windowEntities.Contains(result.entity))
+                eint windowEntity = r.entity;
+                IsWindow window = r.Component1;
+                if (!windowEntities.Contains(windowEntity))
                 {
-                    SDL3Window newWindow = CreateWindow(result.entity, window);
-                    windowEntities.Add(result.entity);
+                    SDL3Window newWindow = CreateWindow(windowEntity, window);
+                    windowEntities.Add(windowEntity);
                     windowIds.Add(newWindow.ID);
                     lastWindowPositions.Add(newWindow.Position);
                     lastWindowSizes.Add(newWindow.Size);
                     lastWindowState.Add(window.state);
                     lastWindowFlags.Add(window.flags);
                 }
+                else
+                {
+                    //create the surface
+                    if (!world.ContainsComponent<IsSurface>(windowEntity) && world.TryGetComponent(windowEntity, out RenderSystemInUse renderer))
+                    {
+                        FixedString label = world.GetComponent<IsDestination>(windowEntity).rendererLabel;
+                        SDL3Window existingWindow = GetWindow(windowEntity);
+                        if (label == "vulkan")
+                        {
+                            nint address = existingWindow.CreateVulkanSurface(renderer.address);
+                            world.AddComponent(windowEntity, new IsSurface(address));
+                            Console.WriteLine($"Created surface {address} for window {windowEntity} using renderer `{label}`");
+                        }
+                        else
+                        {
+                            throw new NotImplementedException($"Unknown renderer label '{label}', not able to create a surface.");
+                        }
+                    }
+                }
 
-                UpdateWindow(result.entity, ref window);
+                UpdateWindow(r.entity, ref window);
             }
         }
 
@@ -441,15 +460,20 @@ namespace Windows.Systems
                 UnmanagedList<Destination.Extension> extensions = world.GetList<Destination.Extension>(entity);
                 if (destination.rendererLabel == "vulkan")
                 {
+                    flags |= SDL_WindowFlags.Vulkan;
                     FixedString[] sdlVulkanExtensions = library.GetVulkanInstanceExtensions();
                     foreach (FixedString extension in sdlVulkanExtensions)
                     {
                         extensions.Add(new(extension));
                     }
                 }
+                else if (destination.rendererLabel == "ogl")
+                {
+                    throw new NotImplementedException();
+                }
                 else if (destination.rendererLabel == "dx3d")
                 {
-
+                    throw new NotImplementedException();
                 }
                 else
                 {

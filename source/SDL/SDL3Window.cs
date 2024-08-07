@@ -1,11 +1,10 @@
-﻿using SDL3;
-using System;
+﻿using System;
 using System.Diagnostics;
 using Unmanaged;
 using Windows.Components;
 using static SDL3.SDL3;
 
-namespace SDL
+namespace SDL3
 {
     public unsafe readonly struct SDL3Window : IDisposable
     {
@@ -145,9 +144,15 @@ namespace SDL
             ThrowIfDisposed();
             ulong surfacePointer;
             nint allocator = 0;
-            if (SDL_Vulkan_CreateSurface(window, vulkanInstance, allocator, &surfacePointer) == 0)
+            int result = SDL_Vulkan_CreateSurface(window, vulkanInstance, allocator, &surfacePointer);
+            if (result != 0)
             {
-                throw new Exception("Could not create surface");
+                throw new Exception($"Could not create surface: {SDL_GetError()}");
+            }
+
+            if (surfacePointer == 0)
+            {
+                throw new Exception("Unable to correctly create a surface using the window's flags");
             }
 
             return (nint)surfacePointer;
