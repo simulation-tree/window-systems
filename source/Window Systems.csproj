@@ -9,7 +9,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Alimer.Bindings.SDL" Version="3.5.4" />
+		<PackageReference Include="Alimer.Bindings.SDL" Version="3.7.0" />
 	</ItemGroup>
 
 	<ItemGroup>

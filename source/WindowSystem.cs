@@ -1,6 +1,7 @@
 ﻿using Rendering;
 using Rendering.Components;
 using SDL;
+using SDL3;
 using Simulation;
 using System;
 using System.Diagnostics;
@@ -23,8 +24,8 @@ namespace Windows.Systems
         private readonly UnmanagedList<WindowSize> lastWindowSizes;
         private readonly UnmanagedList<IsWindow.State> lastWindowState;
         private readonly UnmanagedList<IsWindow.Flags> lastWindowFlags;
-        private readonly UnmanagedDictionary<SDL_KeyboardID, Keyboard> keyboards;
-        private readonly UnmanagedDictionary<SDL_MouseID, Mouse> mice;
+        private readonly UnmanagedDictionary<uint, Keyboard> keyboards;
+        private readonly UnmanagedDictionary<uint, Mouse> mice;
 
         public WindowSystem(World world) : base(world)
         {
@@ -85,7 +86,7 @@ namespace Windows.Systems
             {
                 if (sdlEvent.type == SDL_EventType.WindowMoved)
                 {
-                    if (windowIds.TryIndexOf(sdlEvent.window.windowID.Value, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
                         if (window.state == IsWindow.State.Windowed)
@@ -112,7 +113,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowResized)
                 {
-                    if (windowIds.TryIndexOf(sdlEvent.window.windowID.Value, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
                         if (window.state == IsWindow.State.Windowed)
@@ -139,7 +140,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowEnterFullscreen)
                 {
-                    if (windowIds.TryIndexOf(sdlEvent.window.windowID.Value, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
                         window.state = IsWindow.State.Fullscreen;
@@ -147,7 +148,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowLeaveFullscreen)
                 {
-                    if (windowIds.TryIndexOf(sdlEvent.window.windowID.Value, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
                         window.state = IsWindow.State.Windowed;
@@ -155,7 +156,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowMaximized)
                 {
-                    if (windowIds.TryIndexOf(sdlEvent.window.windowID.Value, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
                         window.state = IsWindow.State.Maximized;
@@ -163,7 +164,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowMinimized)
                 {
-                    if (windowIds.TryIndexOf(sdlEvent.window.windowID.Value, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
                         window.flags |= IsWindow.Flags.Minimized;
@@ -171,7 +172,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowRestored)
                 {
-                    if (windowIds.TryIndexOf(sdlEvent.window.windowID.Value, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
                         window.flags &= ~IsWindow.Flags.Minimized;
@@ -180,7 +181,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowFocusGained)
                 {
-                    if (windowIds.TryIndexOf(sdlEvent.window.windowID.Value, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
                         ref IsWindow.Flags lastFlags = ref lastWindowFlags.GetRef(index);
@@ -193,7 +194,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowFocusLost)
                 {
-                    if (windowIds.TryIndexOf(sdlEvent.window.windowID.Value, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
                         ref IsWindow.Flags lastFlags = ref lastWindowFlags.GetRef(index);
@@ -206,40 +207,42 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowCloseRequested)
                 {
-                    HandleCloseRequest(sdlEvent.window.windowID);
+                    HandleCloseRequest((uint)sdlEvent.window.windowID);
                 }
                 else if (sdlEvent.type == SDL_EventType.KeyDown)
                 {
-                    SDL_KeyboardID keyboardId = sdlEvent.key.which;
+                    uint keyboardId = (uint)sdlEvent.key.which;
                     Keyboard keyboard = GetOrCreateKeyboard(keyboardId);
                     TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.key.timestamp);
-                    uint control = (uint)sdlEvent.key.keysym.scancode;
+                    uint control = (uint)sdlEvent.key.scancode;
                     keyboard.SetKeyDown(control, true, timeStamp);
                     world.Submit(DeviceButtonPressed.Create(keyboard, control));
                 }
                 else if (sdlEvent.type == SDL_EventType.KeyUp)
                 {
-                    SDL_KeyboardID keyboardId = sdlEvent.key.which;
+                    uint keyboardId = (uint)sdlEvent.key.which;
                     if (keyboardId == default || !library.HasKeyboard())
                     {
                         //keyboard no longer available, use the first one
+                        //todo: this release event is faulty, it shouldnt happen with another keyboard
+                        //the keyboard that was removed should stay in existence until all release events were received
                         keyboardId = keyboards.Keys[0];
                     }
 
                     Keyboard keyboard = GetOrCreateKeyboard(keyboardId);
                     TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.key.timestamp);
-                    uint control = (uint)sdlEvent.key.keysym.scancode;
+                    uint control = (uint)sdlEvent.key.scancode;
                     keyboard.SetKeyDown(control, false, timeStamp);
                     world.Submit(DeviceButtonReleased.Create(keyboard, control));
                 }
                 else if (sdlEvent.type == SDL_EventType.KeyboardAdded)
                 {
-                    SDL_KeyboardID keyboardId = sdlEvent.kdevice.which;
+                    uint keyboardId = (uint)sdlEvent.kdevice.which;
                     Keyboard keyboard = GetOrCreateKeyboard(keyboardId);
                 }
                 else if (sdlEvent.type == SDL_EventType.KeyboardRemoved)
                 {
-                    SDL_KeyboardID keyboardId = sdlEvent.kdevice.which;
+                    uint keyboardId = (uint)sdlEvent.kdevice.which;
                     if (keyboards.TryGetValue(keyboardId, out Keyboard keyboard))
                     {
                         keyboard.Dispose();
@@ -248,7 +251,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseMotion)
                 {
-                    SDL_MouseID mouseId = sdlEvent.motion.which;
+                    uint mouseId = (uint)sdlEvent.motion.which;
                     Mouse mouse = GetOrCreateMouse(mouseId);
                     TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.motion.timestamp);
                     Vector2 position = new(sdlEvent.motion.x, sdlEvent.motion.y);
@@ -256,7 +259,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseWheel)
                 {
-                    SDL_MouseID mouseId = sdlEvent.wheel.which;
+                    uint mouseId = (uint)sdlEvent.wheel.which;
                     Mouse mouse = GetOrCreateMouse(mouseId);
                     TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.wheel.timestamp);
                     Vector2 scroll = new(sdlEvent.wheel.x, sdlEvent.wheel.y);
@@ -264,7 +267,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseButtonDown)
                 {
-                    SDL_MouseID mouseId = sdlEvent.button.which;
+                    uint mouseId = (uint)sdlEvent.button.which;
                     Mouse mouse = GetOrCreateMouse(mouseId);
                     TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.button.timestamp);
                     uint control = (uint)sdlEvent.button.button;
@@ -273,7 +276,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseButtonUp)
                 {
-                    SDL_MouseID mouseId = sdlEvent.button.which;
+                    uint mouseId = (uint)sdlEvent.button.which;
                     Mouse mouse = GetOrCreateMouse(mouseId);
                     TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.button.timestamp);
                     uint control = (uint)sdlEvent.button.button;
@@ -282,12 +285,12 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseAdded)
                 {
-                    SDL_MouseID mouseId = sdlEvent.mdevice.which;
+                    uint mouseId = (uint)sdlEvent.mdevice.which;
                     Mouse mouse = GetOrCreateMouse(mouseId);
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseRemoved)
                 {
-                    SDL_MouseID mouseId = sdlEvent.mdevice.which;
+                    uint mouseId = (uint)sdlEvent.mdevice.which;
                     if (mice.TryGetValue(mouseId, out Mouse mouse))
                     {
                         mouse.Dispose();
@@ -314,7 +317,7 @@ namespace Windows.Systems
             }
         }
 
-        private void HandleCloseRequest(SDL_WindowID windowId)
+        private void HandleCloseRequest(uint windowId)
         {
             if (windowIds.TryIndexOf(windowId, out uint index))
             {
@@ -330,7 +333,7 @@ namespace Windows.Systems
             }
         }
 
-        private Keyboard GetOrCreateKeyboard(SDL_KeyboardID keyboardId)
+        private Keyboard GetOrCreateKeyboard(uint keyboardId)
         {
             if (!keyboards.TryGetValue(keyboardId, out Keyboard keyboard))
             {
@@ -341,7 +344,7 @@ namespace Windows.Systems
             return keyboard;
         }
 
-        private Mouse GetOrCreateMouse(SDL_MouseID mouseId)
+        private Mouse GetOrCreateMouse(uint mouseId)
         {
             if (!mice.TryGetValue(mouseId, out Mouse mouse))
             {

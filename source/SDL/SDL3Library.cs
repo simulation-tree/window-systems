@@ -1,14 +1,15 @@
-﻿using System;
+﻿using SDL3;
+using System;
 using System.Diagnostics;
 using Unmanaged;
 using Unmanaged.Collections;
-using static SDL.SDL;
+using static SDL3.SDL3;
 
 namespace SDL
 {
     public unsafe readonly struct SDL3Library : IDisposable
     {
-        public readonly SDL_version version;
+        public readonly int version;
 
         private readonly UnmanagedArray<char> platform;
 
@@ -43,11 +44,11 @@ namespace SDL
 
             if (SDL_Init(flags) != 0)
             {
-                throw new Exception($"Failed to initialize SDL library: {SDL_GetErrorString()}");
+                throw new Exception($"Failed to initialize SDL library: {SDL_GetError()}");
             }
 
-            SDL_GetVersion(out version);
-            platform = new(SDL_GetPlatformString().AsSpan());
+            version = SDL_GetVersion();
+            platform = new((SDL_GetPlatform() ?? "unknown").AsSpan());
             SDL_SetLogOutputFunction(LogSDLOutput);
         }
 
@@ -87,7 +88,7 @@ namespace SDL
         public readonly bool IsGamepad(SDL_JoystickID id)
         {
             ThrowIfDisposed();
-            return SDL_IsGamepad(id) == SDL_bool.SDL_TRUE;
+            return SDL_IsGamepad(id);
         }
 
         public readonly SDL_Gamepad OpenGamepad(SDL_JoystickID id)
@@ -99,19 +100,19 @@ namespace SDL
         public readonly SDL_GamepadType GetGamepadInstanceType(SDL_JoystickID id)
         {
             ThrowIfDisposed();
-            return SDL_GetGamepadInstanceType(id);
+            return SDL_GetGamepadTypeForID(id);
         }
 
         public readonly SDL_Gamepad GetGamepadFromInstanceID(SDL_JoystickID id)
         {
             ThrowIfDisposed();
-            return SDL_GetGamepadFromInstanceID(id);
+            return SDL_GetGamepadFromID(id);
         }
 
         public readonly bool HasKeyboard()
         {
             ThrowIfDisposed();
-            return SDL_HasKeyboard() == SDL_bool.SDL_TRUE;
+            return SDL_HasKeyboard();
         }
 
         public readonly void ShowCursor()
@@ -126,31 +127,31 @@ namespace SDL
             SDL_HideCursor();
         }
 
-        public readonly SDL_Cursor* GetCursor()
+        public readonly SDL_Cursor GetCursor()
         {
             ThrowIfDisposed();
             return SDL_GetCursor();
         }
 
-        public readonly SDL_Cursor* CreateSystemCursor(SDL_SystemCursor id)
+        public readonly SDL_Cursor CreateSystemCursor(SDL_SystemCursor id)
         {
             ThrowIfDisposed();
             return SDL_CreateSystemCursor(id);
         }
 
-        public readonly SDL_Cursor* GetDefaultCursor()
+        public readonly SDL_Cursor GetDefaultCursor()
         {
             ThrowIfDisposed();
             return SDL_GetDefaultCursor();
         }
 
-        public readonly void DestroyCursor(SDL_Cursor* cursor)
+        public readonly void DestroyCursor(SDL_Cursor cursor)
         {
             ThrowIfDisposed();
             SDL_DestroyCursor(cursor);
         }
 
-        public readonly void SetCursor(SDL_Cursor* cursor)
+        public readonly void SetCursor(SDL_Cursor cursor)
         {
             ThrowIfDisposed();
             SDL_SetCursor(cursor);
@@ -179,7 +180,7 @@ namespace SDL
         public readonly SDL3Window GetWindow(uint windowId)
         {
             ThrowIfDisposed();
-            SDL_Window window = SDL_GetWindowFromID(windowId);
+            SDL_Window window = SDL_GetWindowFromID((SDL_WindowID)windowId);
             return new(window);
         }
     }

@@ -1,8 +1,9 @@
-﻿using System;
+﻿using SDL3;
+using System;
 using System.Diagnostics;
 using Unmanaged;
 using Windows.Components;
-using static SDL.SDL;
+using static SDL3.SDL3;
 
 namespace SDL
 {
@@ -11,12 +12,12 @@ namespace SDL
         private readonly SDL_Window window;
 
         public readonly bool IsDestroyed => window.IsNull;
-        public readonly uint ID => SDL_GetWindowID(window);
+        public readonly uint ID => (uint)SDL_GetWindowID(window);
         public readonly SDL_WindowFlags Flags => SDL_GetWindowFlags(window);
 
         public readonly string Title
         {
-            get => SDL_GetWindowTitleString(window);
+            get => SDL_GetWindowTitle(window) ?? "";
             set => SDL_SetWindowTitle(window, value);
         }
 
@@ -51,19 +52,19 @@ namespace SDL
                 SDL_GetWindowBordersSize(window, &top, &left, &bottom, &right);
                 return top == 0 && left == 0 && bottom == 0 && right == 0;
             }
-            set => SDL_SetWindowBordered(window, value ? SDL_bool.SDL_FALSE : SDL_bool.SDL_TRUE);
+            set => SDL_SetWindowBordered(window, value);
         }
 
         public readonly bool IsResizable
         {
             get => (SDL_GetWindowFlags(window) & SDL_WindowFlags.Resizable) == SDL_WindowFlags.Resizable;
-            set => SDL_SetWindowResizable(window, value ? SDL_bool.SDL_TRUE : SDL_bool.SDL_FALSE);
+            set => SDL_SetWindowResizable(window, value);
         }
 
         public readonly bool IsFullscreen
         {
             get => (SDL_GetWindowFlags(window) & SDL_WindowFlags.Fullscreen) == SDL_WindowFlags.Fullscreen;
-            set => SDL_SetWindowFullscreen(window, value ? SDL_bool.SDL_TRUE : SDL_bool.SDL_FALSE);
+            set => SDL_SetWindowFullscreen(window, value);
         }
 
         public readonly bool IsMinimized
@@ -84,8 +85,8 @@ namespace SDL
 
         public readonly bool LockCursor
         {
-            get => SDL_GetWindowMouseGrab(window) == SDL_bool.SDL_TRUE;
-            set => SDL_SetWindowMouseGrab(window, value ? SDL_bool.SDL_TRUE : SDL_bool.SDL_FALSE);
+            get => SDL_GetWindowMouseGrab(window);
+            set => SDL_SetWindowMouseGrab(window, value);
         }
 
         public readonly bool IsMaximized => (SDL_GetWindowFlags(window) & SDL_WindowFlags.Maximized) == SDL_WindowFlags.Maximized;
@@ -143,19 +144,13 @@ namespace SDL
         {
             ThrowIfDisposed();
             ulong surfacePointer;
-            if (SDL_Vulkan_CreateSurface(window, vulkanInstance, null, &surfacePointer) != SDL_bool.SDL_TRUE)
+            nint allocator = 0;
+            if (SDL_Vulkan_CreateSurface(window, vulkanInstance, allocator, &surfacePointer) == 0)
             {
                 throw new Exception("Could not create surface");
             }
 
             return (nint)surfacePointer;
-        }
-
-        public readonly nint CreateSurface(uint width, uint height)
-        {
-            ThrowIfDisposed();
-            SDL_Surface* pointer = SDL_CreateSurface((int)width, (int)height, SDL_PixelFormatEnum.Rgba32);
-            return (nint)pointer;
         }
 
         /// <summary>
