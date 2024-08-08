@@ -73,6 +73,7 @@ namespace Windows.Systems
             UpdateLastDeviceStates();
             PollWindowEvents();
             UpdateWindowsToMatchEntities();
+            UpdateDestinationSizes();
         }
 
         /// <summary>
@@ -398,6 +399,26 @@ namespace Windows.Systems
                 }
 
                 UpdateWindow(r.entity, ref window);
+            }
+        }
+
+        private void UpdateDestinationSizes()
+        {
+            foreach (var r in windowQuery)
+            {
+                SDL3Window window = GetWindow(r.entity);
+                (int width, int height) = window.GetRealSize();
+                ref IsDestination destination = ref world.GetComponentRef<IsDestination>(r.entity);
+                if (window.IsMinimized)
+                {
+                    destination.width = 0;
+                    destination.height = 0;
+                }
+                else
+                {
+                    destination.width = (uint)width;
+                    destination.height = (uint)height;
+                }
             }
         }
 
