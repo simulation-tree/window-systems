@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Numerics;
 using Unmanaged;
-using Windows.Components;
 using static SDL3.SDL3;
 
 namespace SDL3
 {
-    public unsafe readonly struct SDL3Window : IDisposable
+    public unsafe struct SDL3Window : IDisposable
     {
         private readonly SDL_Window window;
+        private float x;
+        private float y;
+        private float width;
+        private float height;
 
         public readonly bool IsDestroyed => window.IsNull;
         public readonly uint ID => (uint)SDL_GetWindowID(window);
@@ -20,24 +24,26 @@ namespace SDL3
             set => SDL_SetWindowTitle(window, value);
         }
 
-        public readonly WindowPosition Position
+        public Vector2 Position
         {
-            get
+            readonly get => new(x, y);
+            set
             {
-                SDL_GetWindowPosition(window, out int x, out int y);
-                return new(x, y);
+                x = value.X;
+                y = value.Y;
+                SDL_SetWindowPosition(window, (int)x, (int)y);
             }
-            set => SDL_SetWindowPosition(window, value.x, value.y);
         }
 
-        public readonly WindowSize Size
+        public Vector2 Size
         {
-            get
+            readonly get => new(width, height);
+            set
             {
-                SDL_GetWindowSize(window, out int width, out int height);
-                return new((uint)width, (uint)height);
+                width = value.X;
+                height = value.Y;
+                SDL_SetWindowSize(window, (int)width, (int)height);
             }
-            set => SDL_SetWindowSize(window, (int)value.width, (int)value.height);
         }
 
         public readonly bool IsBorderless
@@ -51,7 +57,7 @@ namespace SDL3
                 SDL_GetWindowBordersSize(window, &top, &left, &bottom, &right);
                 return top == 0 && left == 0 && bottom == 0 && right == 0;
             }
-            set => SDL_SetWindowBordered(window, value);
+            set => SDL_SetWindowBordered(window, !value);
         }
 
         public readonly bool IsResizable
@@ -95,13 +101,18 @@ namespace SDL3
             window = existingWindow;
         }
 
-        public SDL3Window(ReadOnlySpan<char> title, uint width, uint height, SDL_WindowFlags flags)
+        public SDL3Window(ReadOnlySpan<char> title, Vector2 size, SDL_WindowFlags flags)
         {
+            width = size.X;
+            height = size.Y;
             window = SDL_CreateWindow(title.ToString(), (int)width, (int)height, flags);
+            SDL_GetWindowPosition(window, out int x, out int y);
+            this.x = x;
+            this.y = y;
         }
 
         [Conditional("DEBUG")]
-        private void ThrowIfDisposed()
+        private readonly void ThrowIfDisposed()
         {
             if (IsDestroyed)
             {
@@ -133,10 +144,27 @@ namespace SDL3
         /// <summary>
         /// Centers the window to the middle of the screen.
         /// </summary>
-        public readonly void Center()
+        public void Center()
         {
             ThrowIfDisposed();
             SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+            SDL_GetWindowPosition(window, out int x, out int y);
+            this.x = x;
+            this.y = y;
+        }
+
+        public readonly (int x, int y) GetRealPosition()
+        {
+            ThrowIfDisposed();
+            SDL_GetWindowPosition(window, out int x, out int y);
+            return (x, y);
+        }
+
+        public readonly (int width, int height) GetRealSize()
+        {
+            ThrowIfDisposed();
+            SDL_GetWindowSize(window, out int width, out int height);
+            return (width, height);
         }
 
         public readonly nint CreateVulkanSurface(nint vulkanInstance)

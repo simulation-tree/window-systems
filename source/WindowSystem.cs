@@ -19,8 +19,8 @@ namespace Windows.Systems
         private readonly Query<IsWindow> windowQuery;
         private readonly UnmanagedList<eint> windowEntities;
         private readonly UnmanagedList<uint> windowIds;
-        private readonly UnmanagedList<WindowPosition> lastWindowPositions;
-        private readonly UnmanagedList<WindowSize> lastWindowSizes;
+        private readonly UnmanagedList<(int, int)> lastWindowPositions;
+        private readonly UnmanagedList<(int, int)> lastWindowSizes;
         private readonly UnmanagedList<IsWindow.State> lastWindowState;
         private readonly UnmanagedList<IsWindow.Flags> lastWindowFlags;
         private readonly UnmanagedDictionary<uint, Keyboard> keyboards;
@@ -72,7 +72,7 @@ namespace Windows.Systems
         {
             UpdateLastDeviceStates();
             PollWindowEvents();
-            UpdateWindows();
+            UpdateWindowsToMatchEntities();
         }
 
         /// <summary>
@@ -93,11 +93,11 @@ namespace Windows.Systems
                             eint entity = windowEntities[index];
                             int x = sdlEvent.window.data1;
                             int y = sdlEvent.window.data2;
-                            WindowPosition position = new(x, y);
-                            ref WindowPosition currentPosition = ref lastWindowPositions.GetRef(index);
-                            if (currentPosition != position)
+                            ref (int x, int y) currentPosition = ref lastWindowPositions.GetRef(index);
+                            if (currentPosition.x != x || currentPosition.y != y)
                             {
-                                currentPosition = position;
+                                WindowPosition position = new(new(x, y));
+                                currentPosition = (x, y);
                                 if (world.ContainsComponent<WindowPosition>(entity))
                                 {
                                     world.SetComponent(entity, position);
@@ -118,13 +118,13 @@ namespace Windows.Systems
                         if (window.state == IsWindow.State.Windowed)
                         {
                             eint entity = windowEntities[index];
-                            uint width = (uint)sdlEvent.window.data1;
-                            uint height = (uint)sdlEvent.window.data2;
-                            WindowSize size = new(width, height);
-                            ref WindowSize currentSize = ref lastWindowSizes.GetRef(index);
-                            if (currentSize != size)
+                            int width = sdlEvent.window.data1;
+                            int height = sdlEvent.window.data2;
+                            ref (int x, int y) currentSize = ref lastWindowSizes.GetRef(index);
+                            if (currentSize.x != width || currentSize.y != height)
                             {
-                                currentSize = size;
+                                WindowSize size = new(new(width, height));
+                                currentSize = (width, height);
                                 if (world.ContainsComponent<WindowSize>(entity))
                                 {
                                     world.SetComponent(entity, size);
@@ -357,7 +357,7 @@ namespace Windows.Systems
         /// <summary>
         /// Updates window presentations to match entities.
         /// </summary>
-        private void UpdateWindows()
+        private void UpdateWindowsToMatchEntities()
         {
             DestroyOldWindows();
 
@@ -372,8 +372,8 @@ namespace Windows.Systems
                     SDL3Window newWindow = CreateWindow(windowEntity, window);
                     windowEntities.Add(windowEntity);
                     windowIds.Add(newWindow.ID);
-                    lastWindowPositions.Add(newWindow.Position);
-                    lastWindowSizes.Add(newWindow.Size);
+                    lastWindowPositions.Add(newWindow.GetRealPosition());
+                    lastWindowSizes.Add(newWindow.GetRealSize());
                     lastWindowState.Add(window.state);
                     lastWindowFlags.Add(window.flags);
                 }
@@ -481,7 +481,7 @@ namespace Windows.Systems
                 }
             }
 
-            return new(buffer[..window.title.Length], size.width, size.height, flags);
+            return new(buffer[..window.title.Length], size.value, flags);
         }
 
         public SDL3Window GetWindow(eint entity)
@@ -503,14 +503,26 @@ namespace Windows.Systems
             SDL3Window sdlWindow = library.GetWindow(windowIds[index]);
             if (world.TryGetComponent(windowEntity, out WindowPosition position))
             {
-                sdlWindow.Position = position;
-                lastWindowPositions[index] = position;
+                ref (int x, int y) lastPosition = ref lastWindowPositions.GetRef(index);
+                int x = (int)position.value.X;
+                int y = (int)position.value.Y;
+                if (lastPosition.x != x || lastPosition.y != y)
+                {
+                    lastPosition = (x, y);
+                    sdlWindow.Position = position.value;
+                }
             }
 
             if (world.TryGetComponent(windowEntity, out WindowSize size))
             {
-                sdlWindow.Size = size;
-                lastWindowSizes[index] = size;
+                ref (int height, int width) lastSize = ref lastWindowSizes.GetRef(index);
+                int width = (int)size.value.X;
+                int height = (int)size.value.Y;
+                if (lastSize.width != width || lastSize.height != height)
+                {
+                    lastSize = (width, height);
+                    sdlWindow.Size = size.value;
+                }
             }
 
             bool borderless = (window.flags & IsWindow.Flags.Borderless) != 0;
