@@ -363,7 +363,7 @@ namespace Windows.Systems
             DestroyOldWindows();
 
             //create new windows and update existing ones
-            windowQuery.Fill();
+            windowQuery.Update();
             foreach (var r in windowQuery)
             {
                 eint windowEntity = r.entity;
