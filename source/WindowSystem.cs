@@ -381,14 +381,14 @@ namespace Windows.Systems
                 else
                 {
                     //create the surface
-                    if (!world.ContainsComponent<IsSurface>(windowEntity) && world.TryGetComponent(windowEntity, out RenderSystemInUse renderer))
+                    if (!world.ContainsComponent<SurfaceReference>(windowEntity) && world.TryGetComponent(windowEntity, out RenderSystemInUse renderer))
                     {
                         FixedString label = world.GetComponent<IsDestination>(windowEntity).rendererLabel;
                         SDL3Window existingWindow = GetWindow(windowEntity);
                         if (label == "vulkan")
                         {
                             nint address = existingWindow.CreateVulkanSurface(renderer.address);
-                            world.AddComponent(windowEntity, new IsSurface(address));
+                            world.AddComponent(windowEntity, new SurfaceReference(address));
                             Console.WriteLine($"Created surface {address} for window {windowEntity} using renderer `{label}`");
                         }
                         else
