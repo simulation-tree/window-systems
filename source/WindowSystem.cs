@@ -467,8 +467,8 @@ namespace Windows.Systems
             }
 
             Window windowEntity = new(world, entity);
-            Span<char> buffer = stackalloc char[window.title.Length];
-            window.title.CopyTo(buffer);
+            Span<char> buffer = stackalloc char[FixedString.MaxLength];
+            int length = window.title.ToString(buffer);
             if (!world.TryGetComponent(entity, out WindowSize size))
             {
                 throw new NullReferenceException($"Window {entity} is missing expected {typeof(WindowSize)} component");
@@ -502,7 +502,7 @@ namespace Windows.Systems
                 }
             }
 
-            return new(buffer[..window.title.Length], size.value, flags);
+            return new(buffer[..length], size.value, flags);
         }
 
         public SDL3Window GetWindow(eint entity)
@@ -582,9 +582,9 @@ namespace Windows.Systems
             //make sure name of window matches entity
             if (!window.title.Equals(window.title))
             {
-                Span<char> buffer = stackalloc char[window.title.Length];
-                window.title.CopyTo(buffer);
-                window.title = new(buffer[..window.title.Length]);
+                Span<char> buffer = stackalloc char[FixedString.MaxLength];
+                int length = window.title.ToString(buffer);
+                window.title = new(buffer[..length]);
             }
 
             lastWindowFlags[index] = window.flags;
