@@ -170,7 +170,7 @@ namespace SDL3
         public readonly nint CreateVulkanSurface(nint vulkanInstance)
         {
             ThrowIfDisposed();
-            ulong surfacePointer;
+            ulong* surfacePointer = stackalloc ulong[1];
             nint allocator = 0;
             int result = SDL_Vulkan_CreateSurface(window, vulkanInstance, allocator, &surfacePointer);
             if (result != 0)
@@ -178,7 +178,7 @@ namespace SDL3
                 throw new Exception($"Could not create surface: {SDL_GetError()}");
             }
 
-            if (surfacePointer == 0)
+            if ((nint)surfacePointer == 0)
             {
                 throw new Exception("Unable to correctly create a surface using the window's flags");
             }

@@ -23,8 +23,8 @@ namespace Windows.Systems
         private readonly UnmanagedList<(int, int)> lastWindowSizes;
         private readonly UnmanagedList<IsWindow.State> lastWindowState;
         private readonly UnmanagedList<IsWindow.Flags> lastWindowFlags;
-        private readonly UnmanagedDictionary<uint, Keyboard> keyboards;
-        private readonly UnmanagedDictionary<uint, Mouse> mice;
+        //private readonly UnmanagedDictionary<uint, Keyboard> keyboards;
+        //private readonly UnmanagedDictionary<uint, Mouse> mice;
 
         public WindowSystem(World world) : base(world)
         {
@@ -36,16 +36,16 @@ namespace Windows.Systems
             lastWindowSizes = new();
             lastWindowState = new();
             lastWindowFlags = new();
-            keyboards = new();
-            mice = new();
+            //keyboards = new();
+            //mice = new();
             Subscribe<WindowUpdate>(Update);
         }
 
         public override void Dispose()
         {
             CloseCurrentWindows();
-            mice.Dispose();
-            keyboards.Dispose();
+            //mice.Dispose();
+            //keyboards.Dispose();
             lastWindowFlags.Dispose();
             lastWindowState.Dispose();
             lastWindowSizes.Dispose();
@@ -211,110 +211,110 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.KeyDown)
                 {
-                    uint keyboardId = (uint)sdlEvent.key.which;
-                    Keyboard keyboard = GetOrCreateKeyboard(keyboardId);
-                    TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.key.timestamp);
-                    uint control = (uint)sdlEvent.key.scancode;
-                    keyboard.SetKeyDown(control, true, timeStamp);
-                    world.Submit(DeviceButtonPressed.Create(keyboard, control));
+                    //uint keyboardId = (uint)sdlEvent.key.which;
+                    //Keyboard keyboard = GetOrCreateKeyboard(keyboardId);
+                    //TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.key.timestamp);
+                    //uint control = (uint)sdlEvent.key.scancode;
+                    //keyboard.SetKeyDown(control, true, timeStamp);
+                    //world.Submit(DeviceButtonPressed.Create(keyboard, control));
                 }
                 else if (sdlEvent.type == SDL_EventType.KeyUp)
                 {
-                    uint keyboardId = (uint)sdlEvent.key.which;
-                    if (keyboardId == default || !library.HasKeyboard())
-                    {
-                        //keyboard no longer available, use the first one
-                        //todo: this release event is faulty, it shouldnt happen with another keyboard
-                        //the keyboard that was removed should stay in existence until all release events were received
-                        keyboardId = keyboards.Keys[0];
-                    }
-
-                    Keyboard keyboard = GetOrCreateKeyboard(keyboardId);
-                    TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.key.timestamp);
-                    uint control = (uint)sdlEvent.key.scancode;
-                    keyboard.SetKeyDown(control, false, timeStamp);
-                    world.Submit(DeviceButtonReleased.Create(keyboard, control));
+                    //uint keyboardId = (uint)sdlEvent.key.which;
+                    //if (keyboardId == default || !library.HasKeyboard())
+                    //{
+                    //    //keyboard no longer available, use the first one
+                    //    //todo: this release event is faulty, it shouldnt happen with another keyboard
+                    //    //the keyboard that was removed should stay in existence until all release events were received
+                    //    keyboardId = keyboards.Keys[0];
+                    //}
+                    //
+                    //Keyboard keyboard = GetOrCreateKeyboard(keyboardId);
+                    //TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.key.timestamp);
+                    //uint control = (uint)sdlEvent.key.scancode;
+                    //keyboard.SetKeyDown(control, false, timeStamp);
+                    //world.Submit(DeviceButtonReleased.Create(keyboard, control));
                 }
                 else if (sdlEvent.type == SDL_EventType.KeyboardAdded)
                 {
-                    uint keyboardId = (uint)sdlEvent.kdevice.which;
-                    Keyboard keyboard = GetOrCreateKeyboard(keyboardId);
+                    //uint keyboardId = (uint)sdlEvent.kdevice.which;
+                    //Keyboard keyboard = GetOrCreateKeyboard(keyboardId);
                 }
                 else if (sdlEvent.type == SDL_EventType.KeyboardRemoved)
                 {
-                    uint keyboardId = (uint)sdlEvent.kdevice.which;
-                    if (keyboards.TryGetValue(keyboardId, out Keyboard keyboard))
-                    {
-                        keyboard.Dispose();
-                        keyboards.Remove(keyboardId);
-                    }
+                    //uint keyboardId = (uint)sdlEvent.kdevice.which;
+                    //if (keyboards.TryGetValue(keyboardId, out Keyboard keyboard))
+                    //{
+                    //    keyboard.Dispose();
+                    //    keyboards.Remove(keyboardId);
+                    //}
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseMotion)
                 {
-                    uint mouseId = (uint)sdlEvent.motion.which;
-                    Mouse mouse = GetOrCreateMouse(mouseId);
-                    TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.motion.timestamp);
-                    Vector2 position = new(sdlEvent.motion.x, sdlEvent.motion.y);
-                    mouse.SetPosition(position, timeStamp);
+                    //uint mouseId = (uint)sdlEvent.motion.which;
+                    //Mouse mouse = GetOrCreateMouse(mouseId);
+                    //TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.motion.timestamp);
+                    //Vector2 position = new(sdlEvent.motion.x, sdlEvent.motion.y);
+                    //mouse.SetPosition(position, timeStamp);
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseWheel)
                 {
-                    uint mouseId = (uint)sdlEvent.wheel.which;
-                    Mouse mouse = GetOrCreateMouse(mouseId);
-                    TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.wheel.timestamp);
-                    Vector2 scroll = new(sdlEvent.wheel.x, sdlEvent.wheel.y);
-                    mouse.AddScroll(scroll, timeStamp);
+                    //uint mouseId = (uint)sdlEvent.wheel.which;
+                    //Mouse mouse = GetOrCreateMouse(mouseId);
+                    //TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.wheel.timestamp);
+                    //Vector2 scroll = new(sdlEvent.wheel.x, sdlEvent.wheel.y);
+                    //mouse.AddScroll(scroll, timeStamp);
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseButtonDown)
                 {
-                    uint mouseId = (uint)sdlEvent.button.which;
-                    Mouse mouse = GetOrCreateMouse(mouseId);
-                    TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.button.timestamp);
-                    uint control = (uint)sdlEvent.button.button;
-                    mouse.SetButtonDown(control, true, timeStamp);
-                    world.Submit(DeviceButtonPressed.Create(mouse, control));
+                    //uint mouseId = (uint)sdlEvent.button.which;
+                    //Mouse mouse = GetOrCreateMouse(mouseId);
+                    //TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.button.timestamp);
+                    //uint control = (uint)sdlEvent.button.button;
+                    //mouse.SetButtonDown(control, true, timeStamp);
+                    //world.Submit(DeviceButtonPressed.Create(mouse, control));
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseButtonUp)
                 {
-                    uint mouseId = (uint)sdlEvent.button.which;
-                    Mouse mouse = GetOrCreateMouse(mouseId);
-                    TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.button.timestamp);
-                    uint control = (uint)sdlEvent.button.button;
-                    mouse.SetButtonDown(control, false, timeStamp);
-                    world.Submit(DeviceButtonReleased.Create(mouse, control));
+                    //uint mouseId = (uint)sdlEvent.button.which;
+                    //Mouse mouse = GetOrCreateMouse(mouseId);
+                    //TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.button.timestamp);
+                    //uint control = (uint)sdlEvent.button.button;
+                    //mouse.SetButtonDown(control, false, timeStamp);
+                    //world.Submit(DeviceButtonReleased.Create(mouse, control));
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseAdded)
                 {
-                    uint mouseId = (uint)sdlEvent.mdevice.which;
-                    Mouse mouse = GetOrCreateMouse(mouseId);
+                    //uint mouseId = (uint)sdlEvent.mdevice.which;
+                    //Mouse mouse = GetOrCreateMouse(mouseId);
                 }
                 else if (sdlEvent.type == SDL_EventType.MouseRemoved)
                 {
-                    uint mouseId = (uint)sdlEvent.mdevice.which;
-                    if (mice.TryGetValue(mouseId, out Mouse mouse))
-                    {
-                        mouse.Dispose();
-                        mice.Remove(mouseId);
-                    }
+                    //uint mouseId = (uint)sdlEvent.mdevice.which;
+                    //if (mice.TryGetValue(mouseId, out Mouse mouse))
+                    //{
+                    //    mouse.Dispose();
+                    //    mice.Remove(mouseId);
+                    //}
                 }
             }
         }
 
         private void UpdateLastDeviceStates()
         {
-            foreach (eint keyboardEntity in world.GetAll<IsKeyboard>())
-            {
-                ref LastKeyboardState lastState = ref world.GetComponentRef<LastKeyboardState>(keyboardEntity);
-                KeyboardState currentState = world.GetComponent<IsKeyboard>(keyboardEntity).state;
-                lastState = new(currentState);
-            }
-
-            foreach (eint mouseEntity in world.GetAll<IsMouse>())
-            {
-                ref LastMouseState lastState = ref world.GetComponentRef<LastMouseState>(mouseEntity);
-                IsMouse mouse = world.GetComponent<IsMouse>(mouseEntity);
-                lastState = new(mouse.state);
-            }
+            //foreach (eint keyboardEntity in world.GetAll<IsKeyboard>())
+            //{
+            //    ref LastKeyboardState lastState = ref world.GetComponentRef<LastKeyboardState>(keyboardEntity);
+            //    KeyboardState currentState = world.GetComponent<IsKeyboard>(keyboardEntity).state;
+            //    lastState = new(currentState);
+            //}
+            //
+            //foreach (eint mouseEntity in world.GetAll<IsMouse>())
+            //{
+            //    ref LastMouseState lastState = ref world.GetComponentRef<LastMouseState>(mouseEntity);
+            //    IsMouse mouse = world.GetComponent<IsMouse>(mouseEntity);
+            //    lastState = new(mouse.state);
+            //}
         }
 
         private void HandleCloseRequest(uint windowId)
@@ -333,27 +333,27 @@ namespace Windows.Systems
             }
         }
 
-        private Keyboard GetOrCreateKeyboard(uint keyboardId)
-        {
-            if (!keyboards.TryGetValue(keyboardId, out Keyboard keyboard))
-            {
-                keyboard = new(world);
-                keyboards.Add(keyboardId, keyboard);
-            }
-
-            return keyboard;
-        }
-
-        private Mouse GetOrCreateMouse(uint mouseId)
-        {
-            if (!mice.TryGetValue(mouseId, out Mouse mouse))
-            {
-                mouse = new(world);
-                mice.Add(mouseId, mouse);
-            }
-
-            return mouse;
-        }
+        //private Keyboard GetOrCreateKeyboard(uint keyboardId)
+        //{
+        //    if (!keyboards.TryGetValue(keyboardId, out Keyboard keyboard))
+        //    {
+        //        keyboard = new(world);
+        //        keyboards.Add(keyboardId, keyboard);
+        //    }
+        //
+        //    return keyboard;
+        //}
+        //
+        //private Mouse GetOrCreateMouse(uint mouseId)
+        //{
+        //    if (!mice.TryGetValue(mouseId, out Mouse mouse))
+        //    {
+        //        mouse = new(world);
+        //        mice.Add(mouseId, mouse);
+        //    }
+        //
+        //    return mouse;
+        //}
 
         /// <summary>
         /// Updates window presentations to match entities.
