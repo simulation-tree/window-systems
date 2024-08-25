@@ -478,14 +478,16 @@ namespace Windows.Systems
             IsDestination destination = world.GetComponent<IsDestination>(entity);
             if (destination.rendererLabel != default)
             {
-                UnmanagedList<Destination.Extension> extensions = world.GetList<Destination.Extension>(entity);
                 if (destination.rendererLabel == "vulkan")
                 {
                     flags |= SDL_WindowFlags.Vulkan;
                     FixedString[] sdlVulkanExtensions = library.GetVulkanInstanceExtensions();
-                    foreach (FixedString extension in sdlVulkanExtensions)
+                    Span<Destination.Extension> extensions = world.GetArray<Destination.Extension>(entity);
+                    int previousLength = extensions.Length;
+                    extensions = world.ResizeArray<Destination.Extension>(entity, (uint)(previousLength + sdlVulkanExtensions.Length));
+                    for (int i = 0; i < sdlVulkanExtensions.Length; i++)
                     {
-                        extensions.Add(new(extension));
+                        extensions[previousLength + i] = new(sdlVulkanExtensions[i]);
                     }
                 }
                 else if (destination.rendererLabel == "ogl")
