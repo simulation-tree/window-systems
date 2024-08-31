@@ -17,7 +17,7 @@ namespace Windows.Systems
         public readonly Library library;
 
         private readonly Query<IsWindow> windowQuery;
-        private readonly UnmanagedList<eint> windowEntities;
+        private readonly UnmanagedList<uint> windowEntities;
         private readonly UnmanagedList<uint> windowIds;
         private readonly UnmanagedList<(int, int)> lastWindowPositions;
         private readonly UnmanagedList<(int, int)> lastWindowSizes;
@@ -91,7 +91,7 @@ namespace Windows.Systems
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
                         if (window.state == IsWindow.State.Windowed)
                         {
-                            eint entity = windowEntities[index];
+                            uint entity = windowEntities[index];
                             int x = sdlEvent.window.data1;
                             int y = sdlEvent.window.data2;
                             ref (int x, int y) currentPosition = ref lastWindowPositions.GetRef(index);
@@ -118,7 +118,7 @@ namespace Windows.Systems
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
                         if (window.state == IsWindow.State.Windowed)
                         {
-                            eint entity = windowEntities[index];
+                            uint entity = windowEntities[index];
                             int width = sdlEvent.window.data1;
                             int height = sdlEvent.window.data2;
                             ref (int x, int y) currentSize = ref lastWindowSizes.GetRef(index);
@@ -302,14 +302,14 @@ namespace Windows.Systems
 
         private void UpdateLastDeviceStates()
         {
-            //foreach (eint keyboardEntity in world.GetAll<IsKeyboard>())
+            //foreach (uint keyboardEntity in world.GetAll<IsKeyboard>())
             //{
             //    ref LastKeyboardState lastState = ref world.GetComponentRef<LastKeyboardState>(keyboardEntity);
             //    KeyboardState currentState = world.GetComponent<IsKeyboard>(keyboardEntity).state;
             //    lastState = new(currentState);
             //}
             //
-            //foreach (eint mouseEntity in world.GetAll<IsMouse>())
+            //foreach (uint mouseEntity in world.GetAll<IsMouse>())
             //{
             //    ref LastMouseState lastState = ref world.GetComponentRef<LastMouseState>(mouseEntity);
             //    IsMouse mouse = world.GetComponent<IsMouse>(mouseEntity);
@@ -321,7 +321,7 @@ namespace Windows.Systems
         {
             if (windowIds.TryIndexOf(windowId, out uint index))
             {
-                eint windowEntity = windowEntities[index];
+                uint windowEntity = windowEntities[index];
                 if (world.TryGetComponent(windowEntity, out WindowCloseCallback callback))
                 {
                     callback.Invoke(world, windowEntity);
@@ -366,7 +366,7 @@ namespace Windows.Systems
             windowQuery.Update();
             foreach (var r in windowQuery)
             {
-                eint windowEntity = r.entity;
+                uint windowEntity = r.entity;
                 IsWindow window = r.Component1;
                 if (!windowEntities.Contains(windowEntity))
                 {
@@ -426,7 +426,7 @@ namespace Windows.Systems
         {
             for (uint i = 0; i < windowEntities.Count; i++)
             {
-                eint windowEntity = windowEntities[i];
+                uint windowEntity = windowEntities[i];
                 if (!world.ContainsEntity(windowEntity))
                 {
                     SDL3Window sdlWindow = library.GetWindow(windowIds[i]);
@@ -439,7 +439,7 @@ namespace Windows.Systems
             }
         }
 
-        private SDL3Window CreateWindow(eint entity, IsWindow window)
+        private SDL3Window CreateWindow(uint entity, IsWindow window)
         {
             SDL_WindowFlags flags = default;
             if ((window.flags & IsWindow.Flags.Borderless) != 0)
@@ -507,7 +507,7 @@ namespace Windows.Systems
             return new(buffer[..length], size.value, flags);
         }
 
-        public SDL3Window GetWindow(eint entity)
+        public SDL3Window GetWindow(uint entity)
         {
             if (windowEntities.TryIndexOf(entity, out uint index))
             {
@@ -520,7 +520,7 @@ namespace Windows.Systems
         /// <summary>
         /// Updates the SDL window to match the entity.
         /// </summary>
-        private void UpdateWindow(eint windowEntity, ref IsWindow window)
+        private void UpdateWindow(uint windowEntity, ref IsWindow window)
         {
             uint index = windowEntities.IndexOf(windowEntity);
             SDL3Window sdlWindow = library.GetWindow(windowIds[index]);
