@@ -6,7 +6,7 @@ using static SDL3.SDL3;
 
 namespace SDL3
 {
-    public unsafe struct SDL3Window : IDisposable
+    public unsafe struct SDLWindow : IDisposable
     {
         private readonly SDL_Window window;
         private float x;
@@ -96,12 +96,22 @@ namespace SDL3
 
         public readonly bool IsMaximized => (SDL_GetWindowFlags(window) & SDL_WindowFlags.Maximized) == SDL_WindowFlags.Maximized;
 
-        internal SDL3Window(SDL_Window existingWindow)
+        public readonly SDLDisplay Display
+        {
+            get
+            {
+                SDL_DisplayID displayId = SDL_GetDisplayForWindow(window);
+                SDL_DisplayMode* displayMode = SDL_GetCurrentDisplayMode(displayId);
+                return new(displayId, displayMode);
+            }
+        }
+
+        internal SDLWindow(SDL_Window existingWindow)
         {
             window = existingWindow;
         }
 
-        public SDL3Window(ReadOnlySpan<char> title, Vector2 size, SDL_WindowFlags flags)
+        public SDLWindow(ReadOnlySpan<char> title, Vector2 size, SDL_WindowFlags flags)
         {
             width = size.X;
             height = size.Y;
@@ -116,7 +126,7 @@ namespace SDL3
         {
             if (IsDestroyed)
             {
-                throw new ObjectDisposedException(nameof(SDL3Window));
+                throw new ObjectDisposedException(nameof(SDLWindow));
             }
         }
 

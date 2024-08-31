@@ -176,7 +176,7 @@ namespace SDL3
             return extensions.ToArray();
         }
 
-        public readonly SDL3Window GetWindow(uint windowId)
+        public readonly SDLWindow GetWindow(uint windowId)
         {
             ThrowIfDisposed();
             SDL_Window window = SDL_GetWindowFromID((SDL_WindowID)windowId);

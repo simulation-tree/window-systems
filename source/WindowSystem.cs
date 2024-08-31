@@ -4,7 +4,6 @@ using SDL3;
 using Simulation;
 using System;
 using System.Diagnostics;
-using System.Numerics;
 using Unmanaged;
 using Unmanaged.Collections;
 using Windows.Components;
@@ -23,8 +22,7 @@ namespace Windows.Systems
         private readonly UnmanagedList<(int, int)> lastWindowSizes;
         private readonly UnmanagedList<IsWindow.State> lastWindowState;
         private readonly UnmanagedList<IsWindow.Flags> lastWindowFlags;
-        //private readonly UnmanagedDictionary<uint, Keyboard> keyboards;
-        //private readonly UnmanagedDictionary<uint, Mouse> mice;
+        private readonly UnmanagedDictionary<uint, uint> displayEntities;
 
         public WindowSystem(World world) : base(world)
         {
@@ -36,16 +34,14 @@ namespace Windows.Systems
             lastWindowSizes = new();
             lastWindowState = new();
             lastWindowFlags = new();
-            //keyboards = new();
-            //mice = new();
+            displayEntities = new();
             Subscribe<WindowUpdate>(Update);
         }
 
         public override void Dispose()
         {
             CloseCurrentWindows();
-            //mice.Dispose();
-            //keyboards.Dispose();
+            displayEntities.Dispose();
             lastWindowFlags.Dispose();
             lastWindowState.Dispose();
             lastWindowSizes.Dispose();
@@ -61,7 +57,7 @@ namespace Windows.Systems
         {
             for (uint i = 0; i < windowIds.Count; i++)
             {
-                SDL3Window window = library.GetWindow(windowIds[i]);
+                SDLWindow window = library.GetWindow(windowIds[i]);
                 window.Dispose();
             }
 
@@ -70,8 +66,7 @@ namespace Windows.Systems
 
         private void Update(WindowUpdate e)
         {
-            UpdateLastDeviceStates();
-            PollWindowEvents();
+            UpdateEntitiesToMatchWindows();
             UpdateWindowsToMatchEntities();
             UpdateDestinationSizes();
         }
@@ -80,7 +75,7 @@ namespace Windows.Systems
         /// Polls for changes to windows and updates their entities to match if any property
         /// is different from the presentation.
         /// </summary>
-        private void PollWindowEvents()
+        private void UpdateEntitiesToMatchWindows()
         {
             while (library.PollEvent(out SDL_Event sdlEvent))
             {
@@ -94,7 +89,7 @@ namespace Windows.Systems
                             uint entity = windowEntities[index];
                             int x = sdlEvent.window.data1;
                             int y = sdlEvent.window.data2;
-                            ref (int x, int y) currentPosition = ref lastWindowPositions.GetRef(index);
+                            ref (int x, int y) currentPosition = ref lastWindowPositions[index];
                             if (currentPosition.x != x || currentPosition.y != y)
                             {
                                 WindowPosition position = new(new(x, y));
@@ -121,7 +116,7 @@ namespace Windows.Systems
                             uint entity = windowEntities[index];
                             int width = sdlEvent.window.data1;
                             int height = sdlEvent.window.data2;
-                            ref (int x, int y) currentSize = ref lastWindowSizes.GetRef(index);
+                            ref (int x, int y) currentSize = ref lastWindowSizes[index];
                             if (currentSize.x != width || currentSize.y != height)
                             {
                                 WindowSize size = new(new(width, height));
@@ -184,7 +179,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
-                        ref IsWindow.Flags lastFlags = ref lastWindowFlags.GetRef(index);
+                        ref IsWindow.Flags lastFlags = ref lastWindowFlags[index];
                         if (!lastFlags.HasFlag(IsWindow.Flags.Focused))
                         {
                             lastFlags |= IsWindow.Flags.Focused;
@@ -197,7 +192,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         ref IsWindow window = ref world.GetComponentRef<IsWindow>(windowEntities[index]);
-                        ref IsWindow.Flags lastFlags = ref lastWindowFlags.GetRef(index);
+                        ref IsWindow.Flags lastFlags = ref lastWindowFlags[index];
                         if (lastFlags.HasFlag(IsWindow.Flags.Focused))
                         {
                             lastFlags &= ~IsWindow.Flags.Focused;
@@ -209,112 +204,7 @@ namespace Windows.Systems
                 {
                     HandleCloseRequest((uint)sdlEvent.window.windowID);
                 }
-                else if (sdlEvent.type == SDL_EventType.KeyDown)
-                {
-                    //uint keyboardId = (uint)sdlEvent.key.which;
-                    //Keyboard keyboard = GetOrCreateKeyboard(keyboardId);
-                    //TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.key.timestamp);
-                    //uint control = (uint)sdlEvent.key.scancode;
-                    //keyboard.SetKeyDown(control, true, timeStamp);
-                    //world.Submit(DeviceButtonPressed.Create(keyboard, control));
-                }
-                else if (sdlEvent.type == SDL_EventType.KeyUp)
-                {
-                    //uint keyboardId = (uint)sdlEvent.key.which;
-                    //if (keyboardId == default || !library.HasKeyboard())
-                    //{
-                    //    //keyboard no longer available, use the first one
-                    //    //todo: this release event is faulty, it shouldnt happen with another keyboard
-                    //    //the keyboard that was removed should stay in existence until all release events were received
-                    //    keyboardId = keyboards.Keys[0];
-                    //}
-                    //
-                    //Keyboard keyboard = GetOrCreateKeyboard(keyboardId);
-                    //TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.key.timestamp);
-                    //uint control = (uint)sdlEvent.key.scancode;
-                    //keyboard.SetKeyDown(control, false, timeStamp);
-                    //world.Submit(DeviceButtonReleased.Create(keyboard, control));
-                }
-                else if (sdlEvent.type == SDL_EventType.KeyboardAdded)
-                {
-                    //uint keyboardId = (uint)sdlEvent.kdevice.which;
-                    //Keyboard keyboard = GetOrCreateKeyboard(keyboardId);
-                }
-                else if (sdlEvent.type == SDL_EventType.KeyboardRemoved)
-                {
-                    //uint keyboardId = (uint)sdlEvent.kdevice.which;
-                    //if (keyboards.TryGetValue(keyboardId, out Keyboard keyboard))
-                    //{
-                    //    keyboard.Dispose();
-                    //    keyboards.Remove(keyboardId);
-                    //}
-                }
-                else if (sdlEvent.type == SDL_EventType.MouseMotion)
-                {
-                    //uint mouseId = (uint)sdlEvent.motion.which;
-                    //Mouse mouse = GetOrCreateMouse(mouseId);
-                    //TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.motion.timestamp);
-                    //Vector2 position = new(sdlEvent.motion.x, sdlEvent.motion.y);
-                    //mouse.SetPosition(position, timeStamp);
-                }
-                else if (sdlEvent.type == SDL_EventType.MouseWheel)
-                {
-                    //uint mouseId = (uint)sdlEvent.wheel.which;
-                    //Mouse mouse = GetOrCreateMouse(mouseId);
-                    //TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.wheel.timestamp);
-                    //Vector2 scroll = new(sdlEvent.wheel.x, sdlEvent.wheel.y);
-                    //mouse.AddScroll(scroll, timeStamp);
-                }
-                else if (sdlEvent.type == SDL_EventType.MouseButtonDown)
-                {
-                    //uint mouseId = (uint)sdlEvent.button.which;
-                    //Mouse mouse = GetOrCreateMouse(mouseId);
-                    //TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.button.timestamp);
-                    //uint control = (uint)sdlEvent.button.button;
-                    //mouse.SetButtonDown(control, true, timeStamp);
-                    //world.Submit(DeviceButtonPressed.Create(mouse, control));
-                }
-                else if (sdlEvent.type == SDL_EventType.MouseButtonUp)
-                {
-                    //uint mouseId = (uint)sdlEvent.button.which;
-                    //Mouse mouse = GetOrCreateMouse(mouseId);
-                    //TimeSpan timeStamp = TimeSpan.FromMilliseconds(sdlEvent.button.timestamp);
-                    //uint control = (uint)sdlEvent.button.button;
-                    //mouse.SetButtonDown(control, false, timeStamp);
-                    //world.Submit(DeviceButtonReleased.Create(mouse, control));
-                }
-                else if (sdlEvent.type == SDL_EventType.MouseAdded)
-                {
-                    //uint mouseId = (uint)sdlEvent.mdevice.which;
-                    //Mouse mouse = GetOrCreateMouse(mouseId);
-                }
-                else if (sdlEvent.type == SDL_EventType.MouseRemoved)
-                {
-                    //uint mouseId = (uint)sdlEvent.mdevice.which;
-                    //if (mice.TryGetValue(mouseId, out Mouse mouse))
-                    //{
-                    //    mouse.Dispose();
-                    //    mice.Remove(mouseId);
-                    //}
-                }
             }
-        }
-
-        private void UpdateLastDeviceStates()
-        {
-            //foreach (uint keyboardEntity in world.GetAll<IsKeyboard>())
-            //{
-            //    ref LastKeyboardState lastState = ref world.GetComponentRef<LastKeyboardState>(keyboardEntity);
-            //    KeyboardState currentState = world.GetComponent<IsKeyboard>(keyboardEntity).state;
-            //    lastState = new(currentState);
-            //}
-            //
-            //foreach (uint mouseEntity in world.GetAll<IsMouse>())
-            //{
-            //    ref LastMouseState lastState = ref world.GetComponentRef<LastMouseState>(mouseEntity);
-            //    IsMouse mouse = world.GetComponent<IsMouse>(mouseEntity);
-            //    lastState = new(mouse.state);
-            //}
         }
 
         private void HandleCloseRequest(uint windowId)
@@ -333,28 +223,6 @@ namespace Windows.Systems
             }
         }
 
-        //private Keyboard GetOrCreateKeyboard(uint keyboardId)
-        //{
-        //    if (!keyboards.TryGetValue(keyboardId, out Keyboard keyboard))
-        //    {
-        //        keyboard = new(world);
-        //        keyboards.Add(keyboardId, keyboard);
-        //    }
-        //
-        //    return keyboard;
-        //}
-        //
-        //private Mouse GetOrCreateMouse(uint mouseId)
-        //{
-        //    if (!mice.TryGetValue(mouseId, out Mouse mouse))
-        //    {
-        //        mouse = new(world);
-        //        mice.Add(mouseId, mouse);
-        //    }
-        //
-        //    return mouse;
-        //}
-
         /// <summary>
         /// Updates window presentations to match entities.
         /// </summary>
@@ -367,10 +235,10 @@ namespace Windows.Systems
             foreach (var r in windowQuery)
             {
                 uint windowEntity = r.entity;
-                IsWindow window = r.Component1;
+                ref IsWindow window = ref r.Component1;
                 if (!windowEntities.Contains(windowEntity))
                 {
-                    SDL3Window newWindow = CreateWindow(windowEntity, window);
+                    SDLWindow newWindow = CreateWindow(windowEntity, window);
                     windowEntities.Add(windowEntity);
                     windowIds.Add(newWindow.ID);
                     lastWindowPositions.Add(newWindow.GetRealPosition());
@@ -384,7 +252,7 @@ namespace Windows.Systems
                     if (!world.ContainsComponent<SurfaceReference>(windowEntity) && world.TryGetComponent(windowEntity, out RenderSystemInUse renderer))
                     {
                         FixedString label = world.GetComponent<IsDestination>(windowEntity).rendererLabel;
-                        SDL3Window existingWindow = GetWindow(windowEntity);
+                        SDLWindow existingWindow = GetWindow(windowEntity);
                         if (label == "vulkan")
                         {
                             nint address = existingWindow.CreateVulkanSurface(renderer.address);
@@ -398,7 +266,7 @@ namespace Windows.Systems
                     }
                 }
 
-                UpdateWindow(r.entity, ref window);
+                UpdateWindowToMatchEntity(r.entity, ref window);
             }
         }
 
@@ -406,7 +274,7 @@ namespace Windows.Systems
         {
             foreach (var r in windowQuery)
             {
-                SDL3Window window = GetWindow(r.entity);
+                SDLWindow window = GetWindow(r.entity);
                 (int width, int height) = window.GetRealSize();
                 ref IsDestination destination = ref world.GetComponentRef<IsDestination>(r.entity);
                 if (window.IsMinimized)
@@ -429,7 +297,7 @@ namespace Windows.Systems
                 uint windowEntity = windowEntities[i];
                 if (!world.ContainsEntity(windowEntity))
                 {
-                    SDL3Window sdlWindow = library.GetWindow(windowIds[i]);
+                    SDLWindow sdlWindow = library.GetWindow(windowIds[i]);
                     sdlWindow.Dispose();
 
                     windowEntities.RemoveAt(i);
@@ -439,7 +307,7 @@ namespace Windows.Systems
             }
         }
 
-        private SDL3Window CreateWindow(uint entity, IsWindow window)
+        private SDLWindow CreateWindow(uint entity, IsWindow window)
         {
             SDL_WindowFlags flags = default;
             if ((window.flags & IsWindow.Flags.Borderless) != 0)
@@ -507,7 +375,7 @@ namespace Windows.Systems
             return new(buffer[..length], size.value, flags);
         }
 
-        public SDL3Window GetWindow(uint entity)
+        public SDLWindow GetWindow(uint entity)
         {
             if (windowEntities.TryIndexOf(entity, out uint index))
             {
@@ -520,13 +388,13 @@ namespace Windows.Systems
         /// <summary>
         /// Updates the SDL window to match the entity.
         /// </summary>
-        private void UpdateWindow(uint windowEntity, ref IsWindow window)
+        private void UpdateWindowToMatchEntity(uint windowEntity, ref IsWindow window)
         {
             uint index = windowEntities.IndexOf(windowEntity);
-            SDL3Window sdlWindow = library.GetWindow(windowIds[index]);
+            SDLWindow sdlWindow = library.GetWindow(windowIds[index]);
             if (world.TryGetComponent(windowEntity, out WindowPosition position))
             {
-                ref (int x, int y) lastPosition = ref lastWindowPositions.GetRef(index);
+                ref (int x, int y) lastPosition = ref lastWindowPositions[index];
                 int x = (int)position.value.X;
                 int y = (int)position.value.Y;
                 if (lastPosition.x != x || lastPosition.y != y)
@@ -538,7 +406,7 @@ namespace Windows.Systems
 
             if (world.TryGetComponent(windowEntity, out WindowSize size))
             {
-                ref (int height, int width) lastSize = ref lastWindowSizes.GetRef(index);
+                ref (int height, int width) lastSize = ref lastWindowSizes[index];
                 int width = (int)size.value.X;
                 int height = (int)size.value.Y;
                 if (lastSize.width != width || lastSize.height != height)
@@ -591,6 +459,32 @@ namespace Windows.Systems
 
             lastWindowFlags[index] = window.flags;
             lastWindowState[index] = window.state;
+
+            //update referenced display
+            SDLDisplay display = sdlWindow.Display;
+            uint displayEntity = GetOrCreateDisplayEntity(display);
+            ref IsDisplay displayComponent = ref world.GetComponentRef<IsDisplay>(displayEntity);
+            displayComponent.width = display.Width;
+            displayComponent.height = display.Height;
+            displayComponent.refreshRate = display.RefreshRate;
+
+            if (window.displayReference == default)
+            {
+                window.displayReference = world.AddReference(windowEntity, displayEntity);
+            }
+        }
+
+        private uint GetOrCreateDisplayEntity(SDLDisplay display)
+        {
+            uint displayId = display.ID;
+            if (!displayEntities.TryGetValue(displayId, out uint displayEntity))
+            {
+                displayEntity = world.CreateEntity();
+                displayEntities.Add(displayId, displayEntity);
+                world.AddComponent<IsDisplay>(displayEntity);
+            }
+
+            return displayEntity;
         }
     }
 }
