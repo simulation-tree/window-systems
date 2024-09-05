@@ -13,7 +13,7 @@ namespace SDL3
         private readonly UnmanagedArray<char> platform;
 
         public readonly bool IsDisposed => platform.IsDisposed;
-        public readonly ReadOnlySpan<char> Platform => platform.AsSpan();
+        public readonly USpan<char> Platform => platform.AsSpan();
 
         public Library() : this(true, true)
         {
@@ -58,7 +58,7 @@ namespace SDL3
             SDL_Quit();
         }
 
-        private void LogOutput(SDL_LogCategory category, SDL_LogPriority priority, string message)
+        private void LogOutput(SDL_LogCategory category, SDL_LogPriority priority, string? message)
         {
             ThrowIfDisposed();
             if (priority >= SDL_LogPriority.Error)
@@ -156,10 +156,10 @@ namespace SDL3
             SDL_SetCursor(cursor);
         }
 
-        public readonly void SetHint(ReadOnlySpan<byte> name, bool value)
+        public readonly void SetHint(USpan<byte> name, bool value)
         {
             ThrowIfDisposed();
-            SDL_SetHint(name, value);
+            SDL_SetHint(name.AsSystemSpan(), value);
         }
 
         public readonly FixedString[] GetVulkanInstanceExtensions()
@@ -167,10 +167,10 @@ namespace SDL3
             ThrowIfDisposed();
 
             string[] extensionNames = SDL_Vulkan_GetInstanceExtensions();
-            Span<FixedString> extensions = stackalloc FixedString[extensionNames.Length];
-            for (int i = 0; i < extensionNames.Length; i++)
+            USpan<FixedString> extensions = stackalloc FixedString[extensionNames.Length];
+            for (uint i = 0; i < extensionNames.Length; i++)
             {
-                extensions[i] = new(extensionNames[i]);
+                extensions[i] = extensionNames[i];
             }
 
             return extensions.ToArray();

@@ -15,7 +15,7 @@ namespace Windows.Systems
     {
         public readonly Library library;
 
-        private readonly Query<IsWindow> windowQuery;
+        private readonly ComponentQuery<IsWindow> windowQuery;
         private readonly UnmanagedList<uint> windowEntities;
         private readonly UnmanagedList<uint> windowIds;
         private readonly UnmanagedList<(int, int)> lastWindowPositions;
@@ -27,7 +27,7 @@ namespace Windows.Systems
         public WindowSystem(World world) : base(world)
         {
             library = new();
-            windowQuery = new(world);
+            windowQuery = new();
             windowEntities = new();
             windowIds = new();
             lastWindowPositions = new();
@@ -231,7 +231,7 @@ namespace Windows.Systems
             DestroyOldWindows();
 
             //create new windows and update existing ones
-            windowQuery.Update();
+            windowQuery.Update(world);
             foreach (var r in windowQuery)
             {
                 uint windowEntity = r.entity;
@@ -253,7 +253,7 @@ namespace Windows.Systems
                     {
                         FixedString label = world.GetComponent<IsDestination>(windowEntity).rendererLabel;
                         SDLWindow existingWindow = GetWindow(windowEntity);
-                        if (label == "vulkan")
+                        if (label.Equals("vulkan"))
                         {
                             nint address = existingWindow.CreateVulkanSurface(renderer.address);
                             world.AddComponent(windowEntity, new SurfaceReference(address));
@@ -335,8 +335,6 @@ namespace Windows.Systems
             }
 
             Window windowEntity = new(world, entity);
-            Span<char> buffer = stackalloc char[FixedString.MaxLength];
-            int length = window.title.ToString(buffer);
             if (!world.TryGetComponent(entity, out WindowSize size))
             {
                 throw new NullReferenceException($"Window {entity} is missing expected {typeof(WindowSize)} component");
@@ -346,23 +344,23 @@ namespace Windows.Systems
             IsDestination destination = world.GetComponent<IsDestination>(entity);
             if (destination.rendererLabel != default)
             {
-                if (destination.rendererLabel == "vulkan")
+                if (destination.rendererLabel.Equals("vulkan"))
                 {
                     flags |= SDL_WindowFlags.Vulkan;
                     FixedString[] sdlVulkanExtensions = library.GetVulkanInstanceExtensions();
-                    Span<Destination.Extension> extensions = world.GetArray<Destination.Extension>(entity);
-                    int previousLength = extensions.Length;
+                    USpan<Destination.Extension> extensions = world.GetArray<Destination.Extension>(entity);
+                    uint previousLength = extensions.length;
                     extensions = world.ResizeArray<Destination.Extension>(entity, (uint)(previousLength + sdlVulkanExtensions.Length));
-                    for (int i = 0; i < sdlVulkanExtensions.Length; i++)
+                    for (uint i = 0; i < sdlVulkanExtensions.Length; i++)
                     {
                         extensions[previousLength + i] = new(sdlVulkanExtensions[i]);
                     }
                 }
-                else if (destination.rendererLabel == "ogl")
+                else if (destination.rendererLabel.Equals("ogl"))
                 {
                     throw new NotImplementedException();
                 }
-                else if (destination.rendererLabel == "dx3d")
+                else if (destination.rendererLabel.Equals("dx3d"))
                 {
                     throw new NotImplementedException();
                 }
@@ -372,7 +370,9 @@ namespace Windows.Systems
                 }
             }
 
-            return new(buffer[..length], size.value, flags);
+            USpan<char> buffer = stackalloc char[(int)FixedString.MaxLength];
+            uint length = window.title.CopyTo(buffer);
+            return new(buffer.Slice(0, length), size.value, flags);
         }
 
         public SDLWindow GetWindow(uint entity)
@@ -452,9 +452,9 @@ namespace Windows.Systems
             //make sure name of window matches entity
             if (!window.title.Equals(window.title))
             {
-                Span<char> buffer = stackalloc char[FixedString.MaxLength];
-                int length = window.title.ToString(buffer);
-                window.title = new(buffer[..length]);
+                USpan<char> buffer = stackalloc char[(int)FixedString.MaxLength];
+                uint length = window.title.CopyTo(buffer);
+                window.title = new(buffer.Slice(0, length));
             }
 
             lastWindowFlags[index] = window.flags;

@@ -111,7 +111,7 @@ namespace SDL3
             window = existingWindow;
         }
 
-        public SDLWindow(ReadOnlySpan<char> title, Vector2 size, SDL_WindowFlags flags)
+        public SDLWindow(USpan<char> title, Vector2 size, SDL_WindowFlags flags)
         {
             width = size.X;
             height = size.Y;
@@ -202,15 +202,15 @@ namespace SDL3
         /// These are used when creating Vulkan instances.
         /// </para>
         /// </summary>
-        public static int GetVulkanExtensionNames(Span<FixedString> buffer)
+        public static uint GetVulkanExtensionNames(USpan<FixedString> buffer)
         {
             string[] extensionNames = SDL_Vulkan_GetInstanceExtensions();
-            for (int i = 0; i < extensionNames.Length; i++)
+            for (uint i = 0; i < extensionNames.Length; i++)
             {
                 buffer[i] = extensionNames[i];
             }
 
-            return extensionNames.Length;
+            return (uint)extensionNames.Length;
         }
     }
 }
