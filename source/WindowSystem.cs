@@ -40,7 +40,7 @@ namespace Windows.Systems
 
         public override void Dispose()
         {
-            CloseCurrentWindows();
+            CloseRemainingWindows();
             displayEntities.Dispose();
             lastWindowFlags.Dispose();
             lastWindowState.Dispose();
@@ -53,12 +53,17 @@ namespace Windows.Systems
             base.Dispose();
         }
 
-        private void CloseCurrentWindows()
+        private void CloseRemainingWindows()
         {
-            for (uint i = 0; i < windowIds.Count; i++)
+            windowQuery.Update(world);
+            foreach (var r in windowQuery)
             {
-                SDLWindow window = library.GetWindow(windowIds[i]);
-                window.Dispose();
+                uint windowEntity = r.entity;
+                if (windowEntities.TryIndexOf(windowEntity, out uint index))
+                {
+                    SDLWindow sdlWindow = library.GetWindow(windowIds[index]);
+                    sdlWindow.Dispose();
+                }
             }
 
             windowIds.Clear();
