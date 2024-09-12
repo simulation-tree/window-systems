@@ -47,7 +47,7 @@ namespace SDL3
             }
 
             version = SDL_GetVersion();
-            platform = new((SDL_GetPlatform() ?? "unknown").AsSpan());
+            platform = new((SDL_GetPlatform() ?? "unknown").AsUSpan());
             SDL_SetLogOutputFunction(LogOutput);
         }
 
