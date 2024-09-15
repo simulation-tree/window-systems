@@ -88,6 +88,12 @@ namespace SDL3
             }
         }
 
+        public readonly bool IsAlwaysOnTop
+        {
+            get => (SDL_GetWindowFlags(window) & SDL_WindowFlags.AlwaysOnTop) == SDL_WindowFlags.AlwaysOnTop;
+            set => SDL_SetWindowAlwaysOnTop(window, value);
+        }
+
         public readonly bool LockCursor
         {
             get => SDL_GetWindowMouseGrab(window);

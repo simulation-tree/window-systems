@@ -330,6 +330,11 @@ namespace Windows.Systems
                 flags |= SDL_WindowFlags.Minimized;
             }
 
+            if ((window.flags & IsWindow.Flags.AlwaysOnTop) != 0)
+            {
+                flags |= SDL_WindowFlags.AlwaysOnTop;
+            }
+
             if (window.state == IsWindow.State.Maximized)
             {
                 flags |= SDL_WindowFlags.Maximized;
@@ -424,6 +429,7 @@ namespace Windows.Systems
             bool borderless = (window.flags & IsWindow.Flags.Borderless) != 0;
             bool resizable = (window.flags & IsWindow.Flags.Resizable) != 0;
             bool minimized = (window.flags & IsWindow.Flags.Minimized) != 0;
+            bool alwaysOnTop = (window.flags & IsWindow.Flags.AlwaysOnTop) != 0;
             if (sdlWindow.IsBorderless != borderless)
             {
                 sdlWindow.IsBorderless = borderless;
@@ -437,6 +443,11 @@ namespace Windows.Systems
             if (sdlWindow.IsMinimized != minimized)
             {
                 sdlWindow.IsMinimized = minimized;
+            }
+
+            //if (sdlWindow.IsAlwaysOnTop != alwaysOnTop)
+            {
+                sdlWindow.IsAlwaysOnTop = alwaysOnTop;
             }
 
             bool isMaximized = sdlWindow.IsMaximized;
