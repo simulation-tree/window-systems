@@ -354,7 +354,7 @@ namespace Windows.Systems
                     flags |= SDL_WindowFlags.Vulkan;
                     FixedString[] sdlVulkanExtensions = library.GetVulkanInstanceExtensions();
                     USpan<Destination.Extension> extensions = world.GetArray<Destination.Extension>(entity);
-                    uint previousLength = extensions.length;
+                    uint previousLength = extensions.Length;
                     extensions = world.ResizeArray<Destination.Extension>(entity, (uint)(previousLength + sdlVulkanExtensions.Length));
                     for (uint i = 0; i < sdlVulkanExtensions.Length; i++)
                     {
