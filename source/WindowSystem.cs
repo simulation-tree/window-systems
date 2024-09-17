@@ -335,6 +335,11 @@ namespace Windows.Systems
                 flags |= SDL_WindowFlags.AlwaysOnTop;
             }
 
+            if ((window.flags & IsWindow.Flags.Transparent) != 0)
+            {
+                flags |= SDL_WindowFlags.Transparent;
+            }
+
             if (window.state == IsWindow.State.Maximized)
             {
                 flags |= SDL_WindowFlags.Maximized;
@@ -382,7 +387,14 @@ namespace Windows.Systems
 
             USpan<char> buffer = stackalloc char[(int)FixedString.MaxLength];
             uint length = window.title.CopyTo(buffer);
-            return new(buffer.Slice(0, length), size.value, flags);
+            SDLWindow sdlWindow = new(buffer.Slice(0, length), size.value, flags);
+
+            if ((window.flags & IsWindow.Flags.Transparent) != 0)
+            {
+                sdlWindow.SetTransparency(0f);
+            }
+
+            return sdlWindow;
         }
 
         public SDLWindow GetWindow(uint entity)
@@ -445,9 +457,11 @@ namespace Windows.Systems
                 sdlWindow.IsMinimized = minimized;
             }
 
-            //if (sdlWindow.IsAlwaysOnTop != alwaysOnTop)
+            sdlWindow.IsAlwaysOnTop = alwaysOnTop;
+
+            if ((window.flags & IsWindow.Flags.Transparent) != 0)
             {
-                sdlWindow.IsAlwaysOnTop = alwaysOnTop;
+                sdlWindow.SetTransparency(0f);
             }
 
             bool isMaximized = sdlWindow.IsMaximized;

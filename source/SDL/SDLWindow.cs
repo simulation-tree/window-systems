@@ -202,21 +202,14 @@ namespace SDL3
             return (nint)surfacePointer;
         }
 
-        /// <summary>
-        /// Retrieves the names of the extensions required for surface creation.
-        /// <para>
-        /// These are used when creating Vulkan instances.
-        /// </para>
-        /// </summary>
-        public static uint GetVulkanExtensionNames(USpan<FixedString> buffer)
+        public readonly void SetTransparency(float alpha)
         {
-            string[] extensionNames = SDL_Vulkan_GetInstanceExtensions();
-            for (uint i = 0; i < extensionNames.Length; i++)
-            {
-                buffer[i] = extensionNames[i];
-            }
-
-            return (uint)extensionNames.Length;
+            SDL_PixelFormat format = SDL_GetWindowPixelFormat(window);
+            (int width, int height) = GetRealSize();
+            SDL_Surface* shape = SDL_CreateSurface(width, height, format);
+            SDL_ClearSurface(shape, 0f, 0f, 0f, alpha);
+            int result = SDL_SetWindowShape(window, shape);
+            SDL_DestroySurface(shape);
         }
     }
 }
