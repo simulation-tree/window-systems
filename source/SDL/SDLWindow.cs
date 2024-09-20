@@ -188,8 +188,8 @@ namespace SDL3
             ThrowIfDisposed();
             ulong* surfacePointer = stackalloc ulong[1];
             nint allocator = 0;
-            int result = SDL_Vulkan_CreateSurface(window, vulkanInstance, allocator, &surfacePointer);
-            if (result != 0)
+            bool success = SDL_Vulkan_CreateSurface(window, vulkanInstance, allocator, &surfacePointer);
+            if (!success)
             {
                 throw new Exception($"Could not create surface: {SDL_GetError()}");
             }
@@ -208,7 +208,12 @@ namespace SDL3
             (int width, int height) = GetRealSize();
             SDL_Surface* shape = SDL_CreateSurface(width, height, format);
             SDL_ClearSurface(shape, 0f, 0f, 0f, alpha);
-            int result = SDL_SetWindowShape(window, shape);
+            bool success = SDL_SetWindowShape(window, shape);
+            if (!success)
+            {
+                throw new Exception($"Could not set window shape: {SDL_GetError()}");
+            }
+
             SDL_DestroySurface(shape);
         }
     }

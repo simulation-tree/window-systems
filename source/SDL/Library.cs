@@ -41,7 +41,7 @@ namespace SDL3
                 flags |= SDL_InitFlags.Audio;
             }
 
-            if (SDL_Init(flags) != 0)
+            if (!SDL_Init(flags))
             {
                 throw new Exception($"Failed to initialize SDL library: {SDL_GetError()}");
             }
