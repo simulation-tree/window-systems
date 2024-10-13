@@ -71,6 +71,7 @@ namespace Windows.Systems
 
         private void Update(WindowUpdate e)
         {
+            DestroyWindowsOfDestroyedEntities();
             UpdateEntitiesToMatchWindows();
             UpdateWindowsToMatchEntities();
             UpdateDestinationSizes();
@@ -233,8 +234,6 @@ namespace Windows.Systems
         /// </summary>
         private void UpdateWindowsToMatchEntities()
         {
-            DestroyOldWindows();
-
             //create new windows and update existing ones
             windowQuery.Update(world);
             foreach (var r in windowQuery)
@@ -295,7 +294,7 @@ namespace Windows.Systems
             }
         }
 
-        private void DestroyOldWindows()
+        private void DestroyWindowsOfDestroyedEntities()
         {
             for (uint i = 0; i < windowEntities.Count; i++)
             {
