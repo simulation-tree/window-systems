@@ -22,7 +22,7 @@ namespace Windows.Systems
         private readonly UnmanagedList<(int, int)> lastWindowSizes;
         private readonly UnmanagedList<IsWindow.State> lastWindowState;
         private readonly UnmanagedList<IsWindow.Flags> lastWindowFlags;
-        private readonly UnmanagedDictionary<uint, uint> displayEntities;
+        private readonly UnmanagedDictionary<uint, Entity> displayEntities;
 
         readonly unsafe InitializeFunction ISystem.Initialize => new(&Initialize);
         readonly unsafe IterateFunction ISystem.Update => new(&Update);
@@ -537,8 +537,8 @@ namespace Windows.Systems
             //update referenced display
             SDLDisplay display = sdlWindow.Display;
             World world = window.GetWorld();
-            uint displayEntity = GetOrCreateDisplayEntity(world, display);
-            ref IsDisplay displayComponent = ref world.GetComponentRef<IsDisplay>(displayEntity);
+            Entity displayEntity = GetOrCreateDisplayEntity(world, display);
+            ref IsDisplay displayComponent = ref displayEntity.GetComponentRef<IsDisplay>();
             displayComponent.width = display.Width;
             displayComponent.height = display.Height;
             displayComponent.refreshRate = display.RefreshRate;
@@ -549,14 +549,14 @@ namespace Windows.Systems
             }
         }
 
-        private readonly uint GetOrCreateDisplayEntity(World world, SDLDisplay display)
+        private readonly Entity GetOrCreateDisplayEntity(World world, SDLDisplay display)
         {
             uint displayId = display.ID;
-            if (!displayEntities.TryGetValue(displayId, out uint displayEntity))
+            if (!displayEntities.TryGetValue(displayId, out Entity displayEntity))
             {
-                displayEntity = world.CreateEntity();
+                displayEntity = new(world);
                 displayEntities.Add(displayId, displayEntity);
-                world.AddComponent<IsDisplay>(displayEntity);
+                displayEntity.AddComponent<IsDisplay>();
             }
 
             return displayEntity;
