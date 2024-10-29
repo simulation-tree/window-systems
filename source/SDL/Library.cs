@@ -19,15 +19,6 @@ namespace SDL3
         {
         }
 
-        [Conditional("DEBUG")]
-        private void ThrowIfDisposed()
-        {
-            if (IsDisposed)
-            {
-                throw new ObjectDisposedException(nameof(Library));
-            }
-        }
-
         public Library(bool video = true, bool audio = true)
         {
             SDL_InitFlags flags = SDL_InitFlags.Timer | SDL_InitFlags.Gamepad | SDL_InitFlags.Events;
@@ -49,6 +40,16 @@ namespace SDL3
             version = SDL_GetVersion();
             platform = new((SDL_GetPlatform() ?? "unknown").AsUSpan());
             SDL_SetLogOutputFunction(LogOutput);
+        }
+
+
+        [Conditional("DEBUG")]
+        private readonly void ThrowIfDisposed()
+        {
+            if (IsDisposed)
+            {
+                throw new ObjectDisposedException(nameof(Library));
+            }
         }
 
         public readonly void Dispose()
