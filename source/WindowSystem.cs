@@ -1,4 +1,5 @@
-﻿using Rendering;
+﻿using Collections;
+using Rendering;
 using Rendering.Components;
 using SDL3;
 using Simulation;
@@ -7,7 +8,6 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Unmanaged;
-using Unmanaged.Collections;
 using Windows.Components;
 
 namespace Windows.Systems
@@ -16,13 +16,13 @@ namespace Windows.Systems
     {
         private readonly Library library;
         private readonly ComponentQuery<IsWindow> windowQuery;
-        private readonly UnmanagedList<Window> windowEntities;
-        private readonly UnmanagedList<uint> windowIds;
-        private readonly UnmanagedList<(int, int)> lastWindowPositions;
-        private readonly UnmanagedList<(int, int)> lastWindowSizes;
-        private readonly UnmanagedList<IsWindow.State> lastWindowState;
-        private readonly UnmanagedList<IsWindow.Flags> lastWindowFlags;
-        private readonly UnmanagedDictionary<uint, Entity> displayEntities;
+        private readonly List<Window> windowEntities;
+        private readonly List<uint> windowIds;
+        private readonly List<(int, int)> lastWindowPositions;
+        private readonly List<(int, int)> lastWindowSizes;
+        private readonly List<IsWindow.State> lastWindowState;
+        private readonly List<IsWindow.Flags> lastWindowFlags;
+        private readonly Dictionary<uint, Entity> displayEntities;
 
         readonly unsafe InitializeFunction ISystem.Initialize => new(&Initialize);
         readonly unsafe IterateFunction ISystem.Update => new(&Update);

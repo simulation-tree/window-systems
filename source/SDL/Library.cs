@@ -1,7 +1,7 @@
-﻿using System;
+﻿using Collections;
+using System;
 using System.Diagnostics;
 using Unmanaged;
-using Unmanaged.Collections;
 using static SDL3.SDL3;
 
 namespace SDL3
@@ -10,7 +10,7 @@ namespace SDL3
     {
         public readonly int version;
 
-        private readonly UnmanagedArray<char> platform;
+        private readonly Array<char> platform;
 
         public readonly bool IsDisposed => platform.IsDisposed;
         public readonly USpan<char> Platform => platform.AsSpan();
