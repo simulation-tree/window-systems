@@ -429,7 +429,7 @@ namespace Windows.Systems
                 }
             }
 
-            USpan<char> buffer = stackalloc char[(int)FixedString.MaxLength];
+            USpan<char> buffer = stackalloc char[(int)FixedString.Capacity];
             uint length = component.title.CopyTo(buffer);
             SDLWindow sdlWindow = new(buffer.Slice(0, length), size.value, flags);
 
@@ -526,7 +526,7 @@ namespace Windows.Systems
             //make sure name of window matches entity
             if (!component.title.Equals(component.title))
             {
-                USpan<char> buffer = stackalloc char[(int)FixedString.MaxLength];
+                USpan<char> buffer = stackalloc char[(int)FixedString.Capacity];
                 uint length = component.title.CopyTo(buffer);
                 component.title = new(buffer.Slice(0, length));
             }
