@@ -21,7 +21,7 @@ namespace SDL3
 
         public Library(bool video = true, bool audio = true)
         {
-            SDL_InitFlags flags = SDL_InitFlags.Timer | SDL_InitFlags.Gamepad | SDL_InitFlags.Events;
+            SDL_InitFlags flags = SDL_InitFlags.Gamepad | SDL_InitFlags.Events;
             if (video)
             {
                 flags |= SDL_InitFlags.Video;
