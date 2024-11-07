@@ -409,7 +409,7 @@ namespace Windows.Systems
                     FixedString[] sdlVulkanExtensions = library.GetVulkanInstanceExtensions();
                     USpan<Destination.Extension> extensions = window.AsEntity().GetArray<Destination.Extension>();
                     uint previousLength = extensions.Length;
-                    extensions = window.AsEntity().ResizeArray<Destination.Extension>((uint)(previousLength + sdlVulkanExtensions.Length));
+                    extensions = window.AsEntity().ResizeArray<Destination.Extension>(previousLength + (uint)sdlVulkanExtensions.Length);
                     for (uint i = 0; i < sdlVulkanExtensions.Length; i++)
                     {
                         extensions[previousLength + i] = new(sdlVulkanExtensions[i]);
