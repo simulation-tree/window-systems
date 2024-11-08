@@ -305,7 +305,7 @@ namespace Windows.Systems
                         {
                             nint address = existingWindow.CreateVulkanSurface(renderer.address);
                             window.AddComponent(new SurfaceReference(address));
-                            Console.WriteLine($"Created surface `{address}` for window `{window}` using renderer `{label}`");
+                            Debug.WriteLine($"Created surface `{address}` for window `{window}` using renderer `{label}`");
                         }
                         else
                         {
