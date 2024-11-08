@@ -415,17 +415,9 @@ namespace Windows.Systems
                         extensions[previousLength + i] = new(sdlVulkanExtensions[i]);
                     }
                 }
-                else if (destination.rendererLabel.Equals("ogl"))
-                {
-                    throw new NotImplementedException();
-                }
-                else if (destination.rendererLabel.Equals("dx3d"))
-                {
-                    throw new NotImplementedException();
-                }
                 else
                 {
-                    throw new InvalidOperationException($"Unknown renderer label '{destination.rendererLabel}'");
+                    Debug.WriteLine($"Unknown renderer label `{destination.rendererLabel}`, not able to add extensions for SDL window");
                 }
             }
 
