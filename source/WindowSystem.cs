@@ -538,10 +538,8 @@ namespace Windows.Systems
             SDLDisplay display = sdlWindow.Display;
             World world = window.GetWorld();
             Entity displayEntity = GetOrCreateDisplayEntity(world, display);
-            ref IsDisplay displayComponent = ref displayEntity.GetComponentRef<IsDisplay>();
-            displayComponent.width = display.Width;
-            displayComponent.height = display.Height;
-            displayComponent.refreshRate = display.RefreshRate;
+            IsDisplay displayComponent = new(display.Width, display.Height, display.RefreshRate);
+            displayEntity.SetComponent(displayComponent);
 
             if (component.displayReference == default)
             {
