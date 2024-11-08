@@ -67,7 +67,7 @@ namespace SDL3
                 throw new Exception($"{priority} [{category}]: {message}");
             }
 
-            Debug.WriteLine($"{priority} [{category}]: {message}");
+            Trace.WriteLine($"{priority} [{category}]: {message}");
         }
 
         public bool PollEvent(out SDL_Event message)

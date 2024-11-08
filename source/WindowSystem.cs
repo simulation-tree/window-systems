@@ -269,7 +269,7 @@ namespace Windows.Systems
                 }
                 else
                 {
-                    Debug.WriteLine($"The close button of window `{window}` has no callback, nothing will happen");
+                    Trace.WriteLine($"The close button of window `{window}` has no callback, nothing will happen");
                 }
             }
             else
@@ -310,7 +310,7 @@ namespace Windows.Systems
                         {
                             nint address = existingWindow.CreateVulkanSurface(renderer.address);
                             window.AddComponent(new SurfaceReference(address));
-                            Debug.WriteLine($"Created surface `{address}` for window `{window}` using renderer `{label}`");
+                            Trace.WriteLine($"Created surface `{address}` for window `{window}` using renderer `{label}`");
                         }
                         else
                         {
@@ -422,7 +422,7 @@ namespace Windows.Systems
                 }
                 else
                 {
-                    Debug.WriteLine($"Unknown renderer label `{destination.rendererLabel}`, not able to add extensions for SDL window");
+                    Trace.WriteLine($"Unknown renderer label `{destination.rendererLabel}`, not able to add extensions for SDL window");
                 }
             }
 
