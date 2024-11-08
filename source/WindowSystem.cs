@@ -64,7 +64,7 @@ namespace Windows.Systems
 
         public WindowSystem()
         {
-            library = new();
+            library = CreateSDLLibrary();
             windowQuery = new();
             windowEntities = new();
             windowIds = new();
@@ -73,6 +73,11 @@ namespace Windows.Systems
             lastWindowState = new();
             lastWindowFlags = new();
             displayEntities = new();
+        }
+
+        private static Library CreateSDLLibrary()
+        {
+            return new();
         }
 
         private void CleanUp()
