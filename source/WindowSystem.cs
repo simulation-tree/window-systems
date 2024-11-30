@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Unmanaged;
 using Windows.Components;
+using Worlds;
 
 namespace Windows.Systems
 {
@@ -24,9 +25,9 @@ namespace Windows.Systems
         private readonly List<IsWindow.Flags> lastWindowFlags;
         private readonly Dictionary<uint, Entity> displayEntities;
 
-        readonly unsafe InitializeFunction ISystem.Initialize => new(&Initialize);
-        readonly unsafe IterateFunction ISystem.Iterate => new(&Update);
-        readonly unsafe FinalizeFunction ISystem.Finalize => new(&Finalize);
+        readonly unsafe StartSystem ISystem.Start => new(&Initialize);
+        readonly unsafe UpdateSystem ISystem.Update => new(&Update);
+        readonly unsafe FinishSystem ISystem.Finish => new(&Finalize);
 
         [UnmanagedCallersOnly]
         private static void Initialize(SystemContainer container, World world)
@@ -136,16 +137,14 @@ namespace Windows.Systems
                             ref (int x, int y) currentPosition = ref lastWindowPositions[index];
                             if (currentPosition.x != x || currentPosition.y != y)
                             {
-                                WindowPosition position = new(new(x, y));
                                 currentPosition = (x, y);
-                                if (window.AsEntity().ContainsComponent<WindowPosition>())
+                                ref WindowTransform transform = ref window.AsEntity().TryGetComponentRef<WindowTransform>(out bool contains);
+                                if (!contains)
                                 {
-                                    window.SetComponent(position);
+                                    transform = ref window.AsEntity().AddComponentRef<WindowTransform>();
                                 }
-                                else
-                                {
-                                    window.AddComponent(position);
-                                }
+
+                                transform.position = new(x, y);
                             }
                         }
                     }
@@ -163,16 +162,14 @@ namespace Windows.Systems
                             ref (int x, int y) currentSize = ref lastWindowSizes[index];
                             if (currentSize.x != width || currentSize.y != height)
                             {
-                                WindowSize size = new(new(width, height));
                                 currentSize = (width, height);
-                                if (window.AsEntity().ContainsComponent<WindowSize>())
+                                ref WindowTransform transform = ref window.AsEntity().TryGetComponentRef<WindowTransform>(out bool contains);
+                                if (!contains)
                                 {
-                                    window.SetComponent(size);
+                                    transform = ref window.AsEntity().AddComponentRef<WindowTransform>();
                                 }
-                                else
-                                {
-                                    window.AddComponent(size);
-                                }
+
+                                transform.size = new(width, height);
                             }
                         }
                     }
@@ -399,9 +396,9 @@ namespace Windows.Systems
                 flags |= SDL_WindowFlags.Fullscreen;
             }
 
-            if (!window.AsEntity().TryGetComponent(out WindowSize size))
+            if (!window.AsEntity().TryGetComponent(out WindowTransform transform))
             {
-                throw new NullReferenceException($"Window `{window}` is missing expected {typeof(WindowSize)} component");
+                throw new NullReferenceException($"Window `{window}` is missing expected `{typeof(WindowTransform)}` component");
             }
 
             //add extensions
@@ -412,9 +409,9 @@ namespace Windows.Systems
                 {
                     flags |= SDL_WindowFlags.Vulkan;
                     FixedString[] sdlVulkanExtensions = library.GetVulkanInstanceExtensions();
-                    USpan<Destination.Extension> extensions = window.AsEntity().GetArray<Destination.Extension>();
+                    USpan<DestinationExtension> extensions = window.AsEntity().GetArray<DestinationExtension>();
                     uint previousLength = extensions.Length;
-                    extensions = window.AsEntity().ResizeArray<Destination.Extension>(previousLength + (uint)sdlVulkanExtensions.Length);
+                    extensions = window.AsEntity().ResizeArray<DestinationExtension>(previousLength + (uint)sdlVulkanExtensions.Length);
                     for (uint i = 0; i < sdlVulkanExtensions.Length; i++)
                     {
                         extensions[previousLength + i] = new(sdlVulkanExtensions[i]);
@@ -428,7 +425,7 @@ namespace Windows.Systems
 
             USpan<char> buffer = stackalloc char[(int)FixedString.Capacity];
             uint length = component.title.CopyTo(buffer);
-            SDLWindow sdlWindow = new(buffer.Slice(0, length), size.value, flags);
+            SDLWindow sdlWindow = new(buffer.Slice(0, length), transform.size, flags);
 
             if ((component.flags & IsWindow.Flags.Transparent) != 0)
             {
@@ -455,27 +452,24 @@ namespace Windows.Systems
         {
             uint index = windowEntities.IndexOf(window);
             SDLWindow sdlWindow = library.GetWindow(windowIds[index]);
-            if (window.AsEntity().TryGetComponent(out WindowPosition position))
+            if (window.AsEntity().TryGetComponent(out WindowTransform transform))
             {
                 ref (int x, int y) lastPosition = ref lastWindowPositions[index];
-                int x = (int)position.value.X;
-                int y = (int)position.value.Y;
+                int x = (int)transform.position.X;
+                int y = (int)transform.position.Y;
                 if (lastPosition.x != x || lastPosition.y != y)
                 {
                     lastPosition = (x, y);
-                    sdlWindow.Position = position.value;
+                    sdlWindow.Position = transform.position;
                 }
-            }
 
-            if (window.AsEntity().TryGetComponent(out WindowSize size))
-            {
-                ref (int height, int width) lastSize = ref lastWindowSizes[index];
-                int width = (int)size.value.X;
-                int height = (int)size.value.Y;
+                ref (int width, int height) lastSize = ref lastWindowSizes[index];
+                int width = (int)transform.size.X;
+                int height = (int)transform.size.Y;
                 if (lastSize.width != width || lastSize.height != height)
                 {
                     lastSize = (width, height);
-                    sdlWindow.Size = size.value;
+                    sdlWindow.Size = transform.size;
                 }
             }
 
@@ -550,7 +544,7 @@ namespace Windows.Systems
             if (!displayEntities.TryGetValue(displayId, out Entity displayEntity))
             {
                 displayEntity = new(world);
-                displayEntities.Add(displayId, displayEntity);
+                displayEntities.TryAdd(displayId, displayEntity);
                 displayEntity.AddComponent<IsDisplay>();
             }
 
