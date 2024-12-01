@@ -260,9 +260,10 @@ namespace Windows.Systems
             if (windowIds.TryIndexOf(windowId, out uint index))
             {
                 Window window = windowEntities[index];
-                if (window.AsEntity().TryGetComponent(out WindowCloseCallback callback))
+                WindowCloseCallback closeCallback = window.CloseCallback;
+                if (closeCallback != default)
                 {
-                    callback.Invoke(window);
+                    closeCallback.Invoke(window);
                 }
                 else
                 {
