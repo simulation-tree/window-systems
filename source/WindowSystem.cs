@@ -55,10 +55,9 @@ namespace Windows.Systems
         private static void Finalize(SystemContainer container, World world)
         {
             ref WindowSystem system = ref container.Read<WindowSystem>();
-            system.CloseRemainingWindows(world);
-
             if (container.World == world)
             {
+                system.CloseRemainingWindows(world);
                 system.CleanUp();
             }
         }
