@@ -3,17 +3,15 @@ using Rendering;
 using Rendering.Components;
 using SDL3;
 using Simulation;
-using Simulation.Functions;
 using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using Unmanaged;
 using Windows.Components;
 using Worlds;
 
 namespace Windows.Systems
 {
-    public readonly struct WindowSystem : ISystem
+    public readonly partial struct WindowSystem : ISystem
     {
         private readonly Library library;
         private readonly ComponentQuery<IsWindow> windowQuery;
@@ -25,40 +23,32 @@ namespace Windows.Systems
         private readonly List<IsWindow.Flags> lastWindowFlags;
         private readonly Dictionary<uint, Entity> displayEntities;
 
-        readonly unsafe StartSystem ISystem.Start => new(&Initialize);
-        readonly unsafe UpdateSystem ISystem.Update => new(&Update);
-        readonly unsafe FinishSystem ISystem.Finish => new(&Finalize);
-
-        [UnmanagedCallersOnly]
-        private static void Initialize(SystemContainer container, World world)
+        void ISystem.Start(in SystemContainer systemContainer, in World world)
         {
         }
 
-        [UnmanagedCallersOnly]
-        private static void Update(SystemContainer container, World world, TimeSpan delta)
+        void ISystem.Update(in SystemContainer systemContainer, in World world, in TimeSpan delta)
         {
-            ref WindowSystem system = ref container.Read<WindowSystem>();
-            if (container.World == world)
+            if (systemContainer.World == world)
             {
-                system.DestroyWindowsOfDestroyedEntities();
+                DestroyWindowsOfDestroyedEntities();
             }
 
-            system.Update(world);
+            Update(world);
 
-            if (container.World == world)
+            if (systemContainer.World == world)
             {
-                system.UpdateEntitiesToMatchWindows();
+                UpdateEntitiesToMatchWindows();
             }
         }
 
-        [UnmanagedCallersOnly]
-        private static void Finalize(SystemContainer container, World world)
+        void ISystem.Finish(in SystemContainer systemContainer, in World world)
         {
-            ref WindowSystem system = ref container.Read<WindowSystem>();
-            if (container.World == world)
+            CloseRemainingWindows(world);
+
+            if (systemContainer.World == world)
             {
-                system.CloseRemainingWindows(world);
-                system.CleanUp();
+                CleanUp();
             }
         }
 
