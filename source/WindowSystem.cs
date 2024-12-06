@@ -57,19 +57,18 @@ namespace Windows.Systems
         void ISystem.Finish(in SystemContainer systemContainer, in World world)
         {
             CloseRemainingWindows(world);
-            windowIds.Clear();
-        }
 
-        void IDisposable.Dispose()
-        {
-            displayEntities.Dispose();
-            lastWindowFlags.Dispose();
-            lastWindowState.Dispose();
-            lastWindowSizes.Dispose();
-            lastWindowPositions.Dispose();
-            windowIds.Dispose();
-            windowEntities.Dispose();
-            library.Dispose();
+            if (systemContainer.World == world)
+            {
+                displayEntities.Dispose();
+                lastWindowFlags.Dispose();
+                lastWindowState.Dispose();
+                lastWindowSizes.Dispose();
+                lastWindowPositions.Dispose();
+                windowIds.Dispose();
+                windowEntities.Dispose();
+                library.Dispose();
+            }
         }
 
         private readonly void CloseRemainingWindows(World world)
