@@ -16,26 +16,29 @@ namespace Windows.Systems
         private readonly Library library;
         private readonly List<Window> windowEntities;
         private readonly List<uint> windowIds;
-        private readonly List<(int, int)> lastWindowPositions;
-        private readonly List<(int, int)> lastWindowSizes;
-        private readonly List<IsWindow.State> lastWindowState;
-        private readonly List<IsWindow.Flags> lastWindowFlags;
+        private readonly List<WindowState> lastWindowStates;
         private readonly Dictionary<uint, Entity> displayEntities;
 
-        public WindowSystem()
+        private WindowSystem(Library library, List<Window> windowEntities, List<uint> windowIds, List<WindowState> lastWindowStates, Dictionary<uint, Entity> displayEntities)
         {
-            library = new();
-            windowEntities = new();
-            windowIds = new();
-            lastWindowPositions = new();
-            lastWindowSizes = new();
-            lastWindowState = new();
-            lastWindowFlags = new();
-            displayEntities = new();
+            this.library = library;
+            this.windowEntities = windowEntities;
+            this.windowIds = windowIds;
+            this.lastWindowStates = lastWindowStates;
+            this.displayEntities = displayEntities;
         }
 
         void ISystem.Start(in SystemContainer systemContainer, in World world)
         {
+            if (systemContainer.World == world)
+            {
+                Library library = new();
+                List<Window> windowEntities = new();
+                List<uint> windowIds = new();
+                List<WindowState> lastWindowStates = new();
+                Dictionary<uint, Entity> displayEntities = new();
+                systemContainer.Write(new WindowSystem(library, windowEntities, windowIds, lastWindowStates, displayEntities));
+            }
         }
 
         void ISystem.Update(in SystemContainer systemContainer, in World world, in TimeSpan delta)
@@ -61,10 +64,7 @@ namespace Windows.Systems
             if (systemContainer.World == world)
             {
                 displayEntities.Dispose();
-                lastWindowFlags.Dispose();
-                lastWindowState.Dispose();
-                lastWindowSizes.Dispose();
-                lastWindowPositions.Dispose();
+                lastWindowStates.Dispose();
                 windowIds.Dispose();
                 windowEntities.Dispose();
                 library.Dispose();
@@ -104,10 +104,11 @@ namespace Windows.Systems
                         {
                             int x = sdlEvent.window.data1;
                             int y = sdlEvent.window.data2;
-                            ref (int x, int y) currentPosition = ref lastWindowPositions[index];
-                            if (currentPosition.x != x || currentPosition.y != y)
+                            ref WindowState lastState = ref lastWindowStates[index];
+                            if (lastState.x != x || lastState.y != y)
                             {
-                                currentPosition = (x, y);
+                                lastState.x = x;
+                                lastState.y = y;
                                 ref WindowTransform transform = ref window.AsEntity().TryGetComponent<WindowTransform>(out bool contains);
                                 if (!contains)
                                 {
@@ -129,10 +130,11 @@ namespace Windows.Systems
                         {
                             int width = sdlEvent.window.data1;
                             int height = sdlEvent.window.data2;
-                            ref (int x, int y) currentSize = ref lastWindowSizes[index];
-                            if (currentSize.x != width || currentSize.y != height)
+                            ref WindowState lastState = ref lastWindowStates[index];
+                            if (lastState.width != width || lastState.height != height)
                             {
-                                currentSize = (width, height);
+                                lastState.width = width;
+                                lastState.height = height;
                                 ref WindowTransform transform = ref window.AsEntity().TryGetComponent<WindowTransform>(out bool contains);
                                 if (!contains)
                                 {
@@ -194,12 +196,12 @@ namespace Windows.Systems
                 {
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
-                        ref IsWindow.Flags lastFlags = ref lastWindowFlags[index];
-                        if (!lastFlags.HasFlag(IsWindow.Flags.Focused))
+                        ref WindowState lastState = ref lastWindowStates[index];
+                        if (!lastState.flags.HasFlag(IsWindow.Flags.Focused))
                         {
                             Window window = windowEntities[index];
                             ref IsWindow component = ref window.AsEntity().GetComponent<IsWindow>();
-                            lastFlags |= IsWindow.Flags.Focused;
+                            lastState.flags |= IsWindow.Flags.Focused;
                             component.flags |= IsWindow.Flags.Focused;
                         }
                     }
@@ -208,12 +210,12 @@ namespace Windows.Systems
                 {
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
-                        ref IsWindow.Flags lastFlags = ref lastWindowFlags[index];
-                        if (lastFlags.HasFlag(IsWindow.Flags.Focused))
+                        ref WindowState lastState = ref lastWindowStates[index];
+                        if (lastState.flags.HasFlag(IsWindow.Flags.Focused))
                         {
                             Window window = windowEntities[index];
                             ref IsWindow component = ref window.AsEntity().GetComponent<IsWindow>();
-                            lastFlags &= ~IsWindow.Flags.Focused;
+                            lastState.flags &= ~IsWindow.Flags.Focused;
                             component.flags &= ~IsWindow.Flags.Focused;
                         }
                     }
@@ -258,10 +260,10 @@ namespace Windows.Systems
                     SDLWindow newWindow = CreateWindow(windowEntity, window);
                     windowEntities.Add(windowEntity);
                     windowIds.Add(newWindow.ID);
-                    lastWindowPositions.Add(newWindow.GetRealPosition());
-                    lastWindowSizes.Add(newWindow.GetRealSize());
-                    lastWindowState.Add(window.state);
-                    lastWindowFlags.Add(window.flags);
+
+                    (int x, int y) = newWindow.GetRealPosition();
+                    (int width, int height) = newWindow.GetRealSize();
+                    lastWindowStates.Add(new(x, y, width, height, window.state, window.flags));
                 }
                 else
                 {
@@ -422,23 +424,24 @@ namespace Windows.Systems
             uint index = windowEntities.IndexOf(window);
             SDLWindow sdlWindow = library.GetWindow(windowIds[index]);
             ref WindowTransform transform = ref window.AsEntity().TryGetComponent<WindowTransform>(out bool containsTransform);
+            ref WindowState lastState = ref lastWindowStates[index];
             if (containsTransform)
             {
-                ref (int x, int y) lastPosition = ref lastWindowPositions[index];
                 int x = (int)transform.position.X;
                 int y = (int)transform.position.Y;
-                if (lastPosition.x != x || lastPosition.y != y)
+                if (lastState.x != x || lastState.y != y)
                 {
-                    lastPosition = (x, y);
+                    lastState.x = x;
+                    lastState.y = y;
                     sdlWindow.Position = transform.position;
                 }
 
-                ref (int width, int height) lastSize = ref lastWindowSizes[index];
                 int width = (int)transform.size.X;
                 int height = (int)transform.size.Y;
-                if (lastSize.width != width || lastSize.height != height)
+                if (lastState.width != width || lastState.height != height)
                 {
-                    lastSize = (width, height);
+                    lastState.width = width;
+                    lastState.height = height;
                     sdlWindow.Size = transform.size;
                 }
             }
@@ -492,8 +495,8 @@ namespace Windows.Systems
                 component.title = new(buffer.Slice(0, length));
             }
 
-            lastWindowFlags[index] = component.flags;
-            lastWindowState[index] = component.state;
+            lastState.flags = component.flags;
+            lastState.state = component.state;
 
             //update referenced display
             SDLDisplay display = sdlWindow.Display;
