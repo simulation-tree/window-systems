@@ -257,7 +257,7 @@ namespace Windows.Systems
                 Window windowEntity = new(world, r.entity);
                 if (!windowEntities.Contains(windowEntity))
                 {
-                    SDLWindow newWindow = CreateWindow(windowEntity, window);
+                    SDLWindow newWindow = CreateWindow(windowEntity, ref window);
                     windowEntities.Add(windowEntity);
                     windowIds.Add(newWindow.ID);
 
@@ -328,7 +328,7 @@ namespace Windows.Systems
             }
         }
 
-        private readonly SDLWindow CreateWindow(Window window, IsWindow component)
+        private readonly SDLWindow CreateWindow(Window window, ref IsWindow component)
         {
             SDL_WindowFlags flags = default;
             if ((component.flags & IsWindow.Flags.Borderless) != 0)
@@ -403,6 +403,7 @@ namespace Windows.Systems
                 sdlWindow.SetTransparency(0f);
             }
 
+            component.id = sdlWindow.ID;
             return sdlWindow;
         }
 
