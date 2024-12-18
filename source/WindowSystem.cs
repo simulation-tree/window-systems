@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using Unmanaged;
 using Windows.Components;
+using Windows.Functions;
 using Worlds;
 
 namespace Windows.Systems
@@ -112,7 +113,7 @@ namespace Windows.Systems
                                 ref WindowTransform transform = ref window.AsEntity().TryGetComponent<WindowTransform>(out bool contains);
                                 if (!contains)
                                 {
-                                    transform = ref window.AsEntity().AddComponent<WindowTransform>();
+                                    transform = ref window.AddComponent(new WindowTransform());
                                 }
 
                                 transform.position = new(x, y);
@@ -138,7 +139,7 @@ namespace Windows.Systems
                                 ref WindowTransform transform = ref window.AsEntity().TryGetComponent<WindowTransform>(out bool contains);
                                 if (!contains)
                                 {
-                                    transform = ref window.AsEntity().AddComponent<WindowTransform>();
+                                    transform = ref window.AddComponent(new WindowTransform());
                                 }
 
                                 transform.size = new(width, height);
