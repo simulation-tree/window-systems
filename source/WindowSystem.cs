@@ -240,7 +240,7 @@ namespace Windows.Systems
                 }
                 else
                 {
-                    Trace.WriteLine($"The close button of window `{window}` has no callback, nothing will happen");
+                    window.Dispose();
                 }
             }
             else
@@ -265,6 +265,7 @@ namespace Windows.Systems
                     (int x, int y) = newWindow.GetRealPosition();
                     (int width, int height) = newWindow.GetRealSize();
                     lastWindowStates.Add(new(x, y, width, height, window.state, window.flags));
+                    Trace.WriteLine($"Created window `{windowEntity}` with ID `{newWindow.ID}`");
                 }
                 else
                 {
@@ -324,7 +325,8 @@ namespace Windows.Systems
 
                     windowEntities.RemoveAt(i);
                     windowIds.RemoveAt(i);
-                    break;
+                    lastWindowStates.RemoveAt(i);
+                    Trace.WriteLine($"Destroyed window `{windowEntity}`");
                 }
             }
         }
@@ -395,9 +397,9 @@ namespace Windows.Systems
                 }
             }
 
-            USpan<char> buffer = stackalloc char[(int)FixedString.Capacity];
-            uint length = component.title.CopyTo(buffer);
-            SDLWindow sdlWindow = new(buffer.Slice(0, length), transform.size, flags);
+            USpan<char> titleBuffer = stackalloc char[(int)FixedString.Capacity];
+            uint length = component.title.CopyTo(titleBuffer);
+            SDLWindow sdlWindow = new(titleBuffer.Slice(0, length), transform.size, flags);
 
             if ((component.flags & IsWindow.Flags.Transparent) != 0)
             {
@@ -490,11 +492,11 @@ namespace Windows.Systems
             }
 
             //make sure name of window matches entity
-            if (!component.title.Equals(component.title))
+            if (!component.title.Equals(sdlWindow.Title))
             {
                 USpan<char> buffer = stackalloc char[(int)FixedString.Capacity];
                 uint length = component.title.CopyTo(buffer);
-                component.title = new(buffer.Slice(0, length));
+                sdlWindow.Title = buffer.Slice(0, length).ToString();
             }
 
             lastState.flags = component.flags;
@@ -518,9 +520,8 @@ namespace Windows.Systems
             uint displayId = display.ID;
             if (!displayEntities.TryGetValue(displayId, out Entity displayEntity))
             {
-                displayEntity = new(world);
+                displayEntity = new Entity<IsDisplay>(world);
                 displayEntities.Add(displayId, displayEntity);
-                displayEntity.AddComponent<IsDisplay>();
             }
 
             return displayEntity;
