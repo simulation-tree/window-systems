@@ -183,7 +183,7 @@ namespace SDL3
             return (width, height);
         }
 
-        public readonly nint CreateVulkanSurface(nint vulkanInstance)
+        public readonly Allocation CreateVulkanSurface(Allocation vulkanInstance)
         {
             ThrowIfDisposed();
             ulong* surfacePointer = stackalloc ulong[1];
@@ -199,7 +199,7 @@ namespace SDL3
                 throw new Exception("Unable to correctly create a surface using the window's flags");
             }
 
-            return (nint)surfacePointer;
+            return new(surfacePointer);
         }
 
         public readonly void SetTransparency(float alpha)

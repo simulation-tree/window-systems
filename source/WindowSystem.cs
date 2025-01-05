@@ -270,15 +270,15 @@ namespace Windows.Systems
                 else
                 {
                     //create the surface
-                    if (!windowEntity.TryGetSurfaceReference(out _) && windowEntity.TryGetRenderSystemInUse(out RenderSystemInUse renderer))
+                    if (!windowEntity.TryGetSurfaceInUse(out _) && windowEntity.TryGetRendererInstanceInUse(out Allocation instance))
                     {
                         FixedString label = windowEntity.GetRendererLabel();
                         SDLWindow existingWindow = GetWindow(windowEntity);
                         if (label.Equals("vulkan"))
                         {
-                            nint address = existingWindow.CreateVulkanSurface(renderer.address);
-                            windowEntity.AddComponent(new SurfaceReference(address));
-                            Trace.WriteLine($"Created surface `{address}` for window `{windowEntity}` using renderer `{label}`");
+                            Allocation surface = existingWindow.CreateVulkanSurface(instance);
+                            windowEntity.AddComponent(new SurfaceInUse(surface));
+                            Trace.WriteLine($"Created surface `{surface}` for window `{windowEntity}` using renderer `{label}`");
                         }
                         else
                         {
