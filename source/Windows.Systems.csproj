@@ -19,7 +19,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\simulation\source\Simulation.csproj" />
+		<ProjectReference Include="..\..\simulation\core\Simulation.Core.csproj" />
 		<ProjectReference Include="..\..\unmanaged\source\Unmanaged.csproj" />
 		<ProjectReference Include="..\..\windows\source\Windows.csproj" />
 		<ProjectReference Include="..\..\simulation\generator\Simulation.Generator.csproj">
