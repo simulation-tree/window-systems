@@ -37,7 +37,7 @@ namespace SDL3
             }
 
             version = SDL_GetVersion();
-            platform = new((SDL_GetPlatform() ?? "unknown").AsUSpan());
+            platform = new(SDL_GetPlatform() ?? "unknown");
             SDL_SetLogOutputFunction(LogOutput);
         }
 
@@ -159,7 +159,7 @@ namespace SDL3
         public readonly void SetHint(USpan<byte> name, bool value)
         {
             ThrowIfDisposed();
-            SDL_SetHint(name.AsSystemSpan(), value);
+            SDL_SetHint(name, value);
         }
 
         public readonly FixedString[] GetVulkanInstanceExtensions()
