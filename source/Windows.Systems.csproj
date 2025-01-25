@@ -12,10 +12,14 @@
 		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
 		<IsAotCompatible>True</IsAotCompatible>
 		<IsTrimmable>True</IsTrimmable>
+		<Title>Window Systems</Title>
+		<Authors>popcron</Authors>
+		<Company>game-simulations</Company>
+		<RepositoryUrl>https://github.com/game-simulations/window-systems</RepositoryUrl>
 	</PropertyGroup>
 	
 	<ItemGroup>
-		<PackageReference Include="Alimer.Bindings.SDL" Version="3.9.4" />
+		<PackageReference Include="Alimer.Bindings.SDL" Version="3.9.6" />
 	</ItemGroup>
 
 	<ItemGroup>
