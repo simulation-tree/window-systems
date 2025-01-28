@@ -78,7 +78,7 @@ namespace Windows.Systems
             foreach (var r in query)
             {
                 ref IsWindow component = ref r.component1;
-                Window windowEntity = new(world, r.entity);
+                Window windowEntity = new Entity(world, r.entity).As<Window>();
                 if (windowEntities.TryIndexOf(windowEntity, out uint index))
                 {
                     SDLWindow sdlWindow = library.GetWindow(windowIds[index]);
@@ -255,7 +255,7 @@ namespace Windows.Systems
             foreach (var r in query)
             {
                 ref IsWindow window = ref r.component1;
-                Window windowEntity = new(world, r.entity);
+                Window windowEntity = new Entity(world, r.entity).As<Window>();
                 if (!windowEntities.Contains(windowEntity))
                 {
                     SDLWindow newWindow = CreateWindow(windowEntity, ref window);
@@ -297,7 +297,7 @@ namespace Windows.Systems
             foreach (var r in query)
             {
                 ref IsDestination destination = ref r.component2;
-                Window windowEntity = new(world, r.entity);
+                Window windowEntity = new Entity(world, r.entity).As<Window>();
                 SDLWindow sdlWindow = GetWindow(windowEntity);
                 (int width, int height) = sdlWindow.GetRealSize();
                 if (sdlWindow.IsMinimized)
