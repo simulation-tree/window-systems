@@ -110,7 +110,7 @@ namespace Windows.Systems
                             {
                                 lastState.x = x;
                                 lastState.y = y;
-                                ref WindowTransform transform = ref window.AsEntity().TryGetComponent<WindowTransform>(out bool contains);
+                                ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(out bool contains);
                                 if (!contains)
                                 {
                                     transform = ref window.AddComponent(new WindowTransform());
@@ -136,7 +136,7 @@ namespace Windows.Systems
                             {
                                 lastState.width = width;
                                 lastState.height = height;
-                                ref WindowTransform transform = ref window.AsEntity().TryGetComponent<WindowTransform>(out bool contains);
+                                ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(out bool contains);
                                 if (!contains)
                                 {
                                     transform = ref window.AddComponent(new WindowTransform());
@@ -152,7 +152,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         Window window = windowEntities[index];
-                        ref IsWindow component = ref window.AsEntity().GetComponent<IsWindow>();
+                        ref IsWindow component = ref window.GetComponent<IsWindow>();
                         component.state = IsWindow.State.Fullscreen;
                     }
                 }
@@ -161,7 +161,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         Window window = windowEntities[index];
-                        ref IsWindow component = ref window.AsEntity().GetComponent<IsWindow>();
+                        ref IsWindow component = ref window.GetComponent<IsWindow>();
                         component.state = IsWindow.State.Windowed;
                     }
                 }
@@ -170,7 +170,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         Window window = windowEntities[index];
-                        ref IsWindow component = ref window.AsEntity().GetComponent<IsWindow>();
+                        ref IsWindow component = ref window.GetComponent<IsWindow>();
                         component.state = IsWindow.State.Maximized;
                     }
                 }
@@ -179,7 +179,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         Window window = windowEntities[index];
-                        ref IsWindow component = ref window.AsEntity().GetComponent<IsWindow>();
+                        ref IsWindow component = ref window.GetComponent<IsWindow>();
                         component.flags |= IsWindow.Flags.Minimized;
                     }
                 }
@@ -188,7 +188,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
                     {
                         Window window = windowEntities[index];
-                        ref IsWindow component = ref window.AsEntity().GetComponent<IsWindow>();
+                        ref IsWindow component = ref window.GetComponent<IsWindow>();
                         component.flags &= ~IsWindow.Flags.Minimized;
                         component.state = IsWindow.State.Windowed;
                     }
@@ -201,7 +201,7 @@ namespace Windows.Systems
                         if (!lastState.flags.HasFlag(IsWindow.Flags.Focused))
                         {
                             Window window = windowEntities[index];
-                            ref IsWindow component = ref window.AsEntity().GetComponent<IsWindow>();
+                            ref IsWindow component = ref window.GetComponent<IsWindow>();
                             lastState.flags |= IsWindow.Flags.Focused;
                             component.flags |= IsWindow.Flags.Focused;
                         }
@@ -215,7 +215,7 @@ namespace Windows.Systems
                         if (lastState.flags.HasFlag(IsWindow.Flags.Focused))
                         {
                             Window window = windowEntities[index];
-                            ref IsWindow component = ref window.AsEntity().GetComponent<IsWindow>();
+                            ref IsWindow component = ref window.GetComponent<IsWindow>();
                             lastState.flags &= ~IsWindow.Flags.Focused;
                             component.flags &= ~IsWindow.Flags.Focused;
                         }
@@ -368,7 +368,7 @@ namespace Windows.Systems
                 flags |= SDL_WindowFlags.Fullscreen;
             }
 
-            ref WindowTransform transform = ref window.AsEntity().TryGetComponent<WindowTransform>(out bool containsTransform);
+            ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(out bool containsTransform);
             if (!containsTransform)
             {
                 throw new NullReferenceException($"Window `{window}` is missing expected `{typeof(WindowTransform)}` component");
@@ -383,9 +383,9 @@ namespace Windows.Systems
                     //add sdl extensions that describe vulkan
                     flags |= SDL_WindowFlags.Vulkan;
                     FixedString[] sdlVulkanExtensions = library.GetVulkanInstanceExtensions();
-                    USpan<DestinationExtension> extensions = window.AsEntity().GetArray<DestinationExtension>();
+                    USpan<DestinationExtension> extensions = window.GetArray<DestinationExtension>();
                     uint previousLength = extensions.Length;
-                    extensions = window.AsEntity().ResizeArray<DestinationExtension>(previousLength + (uint)sdlVulkanExtensions.Length);
+                    extensions = window.ResizeArray<DestinationExtension>(previousLength + (uint)sdlVulkanExtensions.Length);
                     for (uint i = 0; i < sdlVulkanExtensions.Length; i++)
                     {
                         extensions[previousLength + i] = new(sdlVulkanExtensions[i]);
@@ -427,7 +427,7 @@ namespace Windows.Systems
         {
             uint index = windowEntities.IndexOf(window);
             SDLWindow sdlWindow = library.GetWindow(windowIds[index]);
-            ref WindowTransform transform = ref window.AsEntity().TryGetComponent<WindowTransform>(out bool containsTransform);
+            ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(out bool containsTransform);
             ref WindowState lastState = ref lastWindowStates[index];
             if (containsTransform)
             {
