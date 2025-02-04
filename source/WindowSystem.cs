@@ -272,7 +272,7 @@ namespace Windows.Systems
                     //create the surface
                     if (!windowEntity.TryGetSurfaceInUse(out _) && windowEntity.TryGetRendererInstanceInUse(out Allocation instance))
                     {
-                        FixedString label = windowEntity.GetRendererLabel();
+                        FixedString label = windowEntity.RendererLabel;
                         SDLWindow existingWindow = GetWindow(windowEntity);
                         if (label.Equals("vulkan"))
                         {
@@ -318,7 +318,7 @@ namespace Windows.Systems
             for (uint i = windowEntities.Count - 1; i != uint.MaxValue; i--)
             {
                 Window windowEntity = windowEntities[i];
-                if (windowEntity.IsDestroyed())
+                if (windowEntity.IsDestroyed)
                 {
                     SDLWindow sdlWindow = library.GetWindow(windowIds[i]);
                     sdlWindow.Dispose();
@@ -375,7 +375,7 @@ namespace Windows.Systems
             }
 
             //add extensions
-            FixedString rendererLabel = window.GetRendererLabel();
+            FixedString rendererLabel = window.RendererLabel;
             if (rendererLabel != default)
             {
                 if (rendererLabel.Equals("vulkan"))
@@ -504,7 +504,7 @@ namespace Windows.Systems
 
             //update referenced display
             SDLDisplay display = sdlWindow.Display;
-            World world = window.GetWorld();
+            World world = window.world;
             Entity displayEntity = GetOrCreateDisplayEntity(world, display);
             IsDisplay displayComponent = new(display.Width, display.Height, display.RefreshRate);
             displayEntity.SetComponent(displayComponent);
@@ -520,7 +520,7 @@ namespace Windows.Systems
             uint displayId = display.ID;
             if (!displayEntities.TryGetValue(displayId, out Entity displayEntity))
             {
-                displayEntity = new Entity<IsDisplay>(world);
+                displayEntity = new Display(world, display.Width, display.Height, display.RefreshRate);
                 displayEntities.Add(displayId, displayEntity);
             }
 

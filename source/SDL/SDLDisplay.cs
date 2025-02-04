@@ -8,7 +8,7 @@
         public readonly uint ID => (uint)displayId;
         public readonly uint Width => (uint)displayMode->w;
         public readonly uint Height => (uint)displayMode->h;
-        public readonly uint RefreshRate => (uint)displayMode->refresh_rate;
+        public readonly float RefreshRate => displayMode->refresh_rate;
 
         internal SDLDisplay(SDL_DisplayID displayId, SDL_DisplayMode* displayMode)
         {
