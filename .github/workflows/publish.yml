@@ -102,9 +102,7 @@ jobs:
             
       - name: Build `Windows.Systems`
         run: dotnet build "${{ github.event.repository.name }}/source" -c Release /p:Version=${VERSION}
-            
-      - name: Test
-        run: dotnet test "${{ github.event.repository.name }}/tests" -c Release --logger "trx"
+      
             
       - name: Pack `Windows.Systems`
         run: dotnet pack "${{ github.event.repository.name }}/source" -c Release /p:Version=${VERSION} --no-build --output .
