@@ -44,13 +44,16 @@ namespace Windows.Systems
 
         void ISystem.Update(in SystemContainer systemContainer, in World world, in TimeSpan delta)
         {
+            ComponentType windowType = world.Schema.GetComponent<IsWindow>();
+            ComponentType destinationType = world.Schema.GetComponent<IsDestination>();
+
             if (systemContainer.World == world)
             {
                 DestroyWindowsOfDestroyedEntities();
             }
 
-            UpdateWindowsToMatchEntities(world);
-            UpdateDestinationSizes(world);
+            UpdateWindowsToMatchEntities(world, windowType);
+            UpdateDestinationSizes(world, windowType, destinationType);
 
             if (systemContainer.World == world)
             {
@@ -60,7 +63,8 @@ namespace Windows.Systems
 
         void ISystem.Finish(in SystemContainer systemContainer, in World world)
         {
-            CloseRemainingWindows(world);
+            ComponentType windowType = world.Schema.GetComponent<IsWindow>();
+            CloseRemainingWindows(world, windowType);
 
             if (systemContainer.World == world)
             {
@@ -72,17 +76,24 @@ namespace Windows.Systems
             }
         }
 
-        private readonly void CloseRemainingWindows(World world)
+        private readonly void CloseRemainingWindows(World world, ComponentType windowType)
         {
-            ComponentQuery<IsWindow> query = new(world);
-            foreach (var r in query)
+            foreach (Chunk chunk in world.Chunks)
             {
-                ref IsWindow component = ref r.component1;
-                Window windowEntity = new Entity(world, r.entity).As<Window>();
-                if (windowEntities.TryIndexOf(windowEntity, out uint index))
+                if (chunk.Definition.Contains(windowType))
                 {
-                    SDLWindow sdlWindow = library.GetWindow(windowIds[index]);
-                    sdlWindow.Dispose();
+                    USpan<uint> entities = chunk.Entities;
+                    USpan<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
+                    for (uint i = 0; i < components.Length; i++)
+                    {
+                        ref IsWindow component = ref components[i];
+                        Window windowEntity = new Entity(world, entities[i]).As<Window>();
+                        if (windowEntities.TryIndexOf(windowEntity, out uint index))
+                        {
+                            SDLWindow sdlWindow = library.GetWindow(windowIds[index]);
+                            sdlWindow.Dispose();
+                        }
+                    }
                 }
             }
         }
@@ -249,66 +260,81 @@ namespace Windows.Systems
             }
         }
 
-        private readonly void UpdateWindowsToMatchEntities(World world)
+        private readonly void UpdateWindowsToMatchEntities(World world, ComponentType windowType)
         {
-            ComponentQuery<IsWindow> query = new(world);
-            foreach (var r in query)
+            foreach (Chunk chunk in world.Chunks)
             {
-                ref IsWindow window = ref r.component1;
-                Window windowEntity = new Entity(world, r.entity).As<Window>();
-                if (!windowEntities.Contains(windowEntity))
+                if (chunk.Definition.Contains(windowType))
                 {
-                    SDLWindow newWindow = CreateWindow(windowEntity, ref window);
-                    windowEntities.Add(windowEntity);
-                    windowIds.Add(newWindow.ID);
-
-                    (int x, int y) = newWindow.GetRealPosition();
-                    (int width, int height) = newWindow.GetRealSize();
-                    lastWindowStates.Add(new(x, y, width, height, window.state, window.flags));
-                    Trace.WriteLine($"Created window `{windowEntity}` with ID `{newWindow.ID}`");
-                }
-                else
-                {
-                    //create the surface
-                    if (!windowEntity.TryGetSurfaceInUse(out _) && windowEntity.TryGetRendererInstanceInUse(out Allocation instance))
+                    USpan<uint> entities = chunk.Entities;
+                    USpan<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
+                    for (uint i = 0; i < entities.Length; i++)
                     {
-                        FixedString label = windowEntity.RendererLabel;
-                        SDLWindow existingWindow = GetWindow(windowEntity);
-                        if (label.Equals("vulkan"))
+                        ref IsWindow window = ref components[i];
+                        Window windowEntity = new Entity(world, entities[i]).As<Window>();
+                        if (!windowEntities.Contains(windowEntity))
                         {
-                            Allocation surface = existingWindow.CreateVulkanSurface(instance);
-                            windowEntity.AddComponent(new SurfaceInUse(surface));
-                            Trace.WriteLine($"Created surface `{surface}` for window `{windowEntity}` using renderer `{label}`");
+                            SDLWindow newWindow = CreateWindow(windowEntity, ref window);
+                            windowEntities.Add(windowEntity);
+                            windowIds.Add(newWindow.ID);
+
+                            (int x, int y) = newWindow.GetRealPosition();
+                            (int width, int height) = newWindow.GetRealSize();
+                            lastWindowStates.Add(new(x, y, width, height, window.state, window.flags));
+                            Trace.WriteLine($"Created window `{windowEntity}` with ID `{newWindow.ID}`");
                         }
                         else
                         {
-                            throw new NotImplementedException($"Unknown renderer label '{label}', not able to create a surface");
+                            //create the surface
+                            if (!windowEntity.TryGetSurfaceInUse(out _) && windowEntity.TryGetRendererInstanceInUse(out Allocation instance))
+                            {
+                                FixedString label = windowEntity.RendererLabel;
+                                SDLWindow existingWindow = GetWindow(windowEntity);
+                                if (label.Equals("vulkan"))
+                                {
+                                    Allocation surface = existingWindow.CreateVulkanSurface(instance);
+                                    windowEntity.AddComponent(new SurfaceInUse(surface));
+                                    Trace.WriteLine($"Created surface `{surface}` for window `{windowEntity}` using renderer `{label}`");
+                                }
+                                else
+                                {
+                                    throw new NotImplementedException($"Unknown renderer label '{label}', not able to create a surface");
+                                }
+                            }
                         }
+
+                        UpdateWindowToMatchEntity(windowEntity, ref window);
                     }
                 }
-
-                UpdateWindowToMatchEntity(windowEntity, ref window);
             }
         }
 
-        private readonly void UpdateDestinationSizes(World world)
+        private readonly void UpdateDestinationSizes(World world, ComponentType windowType, ComponentType destinationType)
         {
-            ComponentQuery<IsWindow, IsDestination> query = new(world);
-            foreach (var r in query)
+            foreach (Chunk chunk in world.Chunks)
             {
-                ref IsDestination destination = ref r.component2;
-                Window windowEntity = new Entity(world, r.entity).As<Window>();
-                SDLWindow sdlWindow = GetWindow(windowEntity);
-                (int width, int height) = sdlWindow.GetRealSize();
-                if (sdlWindow.IsMinimized)
+                Definition key = chunk.Definition;
+                if (key.Contains(windowType) && key.Contains(destinationType))
                 {
-                    destination.width = 0;
-                    destination.height = 0;
-                }
-                else
-                {
-                    destination.width = (uint)width;
-                    destination.height = (uint)height;
+                    USpan<uint> entities = chunk.Entities;
+                    USpan<IsDestination> destinationComponents = chunk.GetComponents<IsDestination>(destinationType);
+                    for (uint i = 0; i < entities.Length; i++)
+                    {
+                        ref IsDestination destination = ref destinationComponents[i];
+                        Window windowEntity = new Entity(world, entities[i]).As<Window>();
+                        SDLWindow sdlWindow = GetWindow(windowEntity);
+                        (int width, int height) = sdlWindow.GetRealSize();
+                        if (sdlWindow.IsMinimized)
+                        {
+                            destination.width = 0;
+                            destination.height = 0;
+                        }
+                        else
+                        {
+                            destination.width = (uint)width;
+                            destination.height = (uint)height;
+                        }
+                    }
                 }
             }
         }
