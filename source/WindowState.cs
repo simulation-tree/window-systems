@@ -2,16 +2,16 @@
 
 namespace Windows.Systems
 {
-    public struct WindowState
+    public struct SDLWindowState
     {
         public int x;
         public int y;
         public int width;
         public int height;
-        public IsWindow.State state;
-        public IsWindow.Flags flags;
+        public WindowState state;
+        public WindowFlags flags;
 
-        public WindowState(int x, int y, int width, int height, IsWindow.State state, IsWindow.Flags flags)
+        public SDLWindowState(int x, int y, int width, int height, WindowState state, WindowFlags flags)
         {
             this.x = x;
             this.y = y;

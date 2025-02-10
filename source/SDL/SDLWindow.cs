@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Drawing;
 using System.Numerics;
 using Unmanaged;
 using static SDL3.SDL3;
@@ -94,13 +95,45 @@ namespace SDL3
             set => SDL_SetWindowAlwaysOnTop(window, value);
         }
 
-        public readonly bool LockCursor
+        public readonly bool IsMouseGrabbed
         {
             get => SDL_GetWindowMouseGrab(window);
             set => SDL_SetWindowMouseGrab(window, value);
         }
 
+        public readonly Vector4 MouseArea
+        {
+            get
+            {
+                Rectangle* rectangle = SDL_GetWindowMouseRect(window);
+                if (rectangle is null)
+                {
+                    return Vector4.Zero;
+                }
+
+                return new(rectangle->X, rectangle->Y, rectangle->Width, rectangle->Height);
+            }
+            set
+            {
+                Rectangle rect = new((int)value.X, (int)value.Y, (int)value.Z, (int)value.W);
+                SDL_SetWindowMouseRect(window, &rect);
+            }
+        }
+
         public readonly bool IsMaximized => (SDL_GetWindowFlags(window) & SDL_WindowFlags.Maximized) == SDL_WindowFlags.Maximized;
+
+        /// <summary>
+        /// Set relative mouse mode for a window.
+        /// <para>
+        /// When relative mode is enabled, the mouse cursor is hidden and
+        /// its position is clamped to the window.
+        /// </para>
+        /// </summary>
+        public readonly bool IsRelativeMouseMode
+        {
+            get => SDL_GetWindowRelativeMouseMode(window);
+            set => SDL_SetWindowRelativeMouseMode(window, value);
+        }
 
         public readonly SDLDisplay Display
         {
@@ -142,18 +175,21 @@ namespace SDL3
         public readonly void Dispose()
         {
             ThrowIfDisposed();
+
             SDL_DestroyWindow(window);
         }
 
         public readonly void Maximize()
         {
             ThrowIfDisposed();
+
             SDL_MaximizeWindow(window);
         }
 
         public readonly void Restore()
         {
             ThrowIfDisposed();
+
             SDL_RestoreWindow(window);
         }
 
@@ -163,6 +199,7 @@ namespace SDL3
         public void Center()
         {
             ThrowIfDisposed();
+
             SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
             SDL_GetWindowPosition(window, out int x, out int y);
             this.x = x;
@@ -172,6 +209,7 @@ namespace SDL3
         public readonly (int x, int y) GetRealPosition()
         {
             ThrowIfDisposed();
+
             SDL_GetWindowPosition(window, out int x, out int y);
             return (x, y);
         }
@@ -179,6 +217,7 @@ namespace SDL3
         public readonly (int width, int height) GetRealSize()
         {
             ThrowIfDisposed();
+
             SDL_GetWindowSize(window, out int width, out int height);
             return (width, height);
         }
@@ -186,6 +225,7 @@ namespace SDL3
         public readonly Allocation CreateVulkanSurface(Allocation vulkanInstance)
         {
             ThrowIfDisposed();
+
             ulong* surfacePointer = stackalloc ulong[1];
             nint allocator = 0;
             bool success = SDL_Vulkan_CreateSurface(window, vulkanInstance, allocator, &surfacePointer);
@@ -204,6 +244,8 @@ namespace SDL3
 
         public readonly void SetTransparency(float alpha)
         {
+            ThrowIfDisposed();
+
             SDL_PixelFormat format = SDL_GetWindowPixelFormat(window);
             (int width, int height) = GetRealSize();
             SDL_Surface* shape = SDL_CreateSurface(width, height, format);
@@ -215,6 +257,16 @@ namespace SDL3
             }
 
             SDL_DestroySurface(shape);
+        }
+
+        /// <summary>
+        /// Assigns the position of the mouse to the specified <paramref name="x"/> and <paramref name="y"/>.
+        /// </summary>
+        public readonly void WarpMouse(float x, float y)
+        {
+            ThrowIfDisposed();
+
+            SDL_WarpMouseInWindow(window, x, y);
         }
     }
 }
