@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Unmanaged;
 using static SDL3.SDL3;
 
 namespace SDL3
 {
+    [SkipLocalsInit]
     public unsafe readonly struct Library : IDisposable
     {
         public readonly int version;

@@ -6,6 +6,7 @@ using Simulation;
 using System;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Unmanaged;
 using Windows.Components;
 using Windows.Functions;
@@ -13,6 +14,7 @@ using Worlds;
 
 namespace Windows.Systems
 {
+    [SkipLocalsInit]
     public readonly partial struct WindowSystem : ISystem
     {
         private readonly Library sdlLibrary;
@@ -424,9 +426,9 @@ namespace Windows.Systems
                 }
             }
 
-            USpan<char> titleBuffer = stackalloc char[(int)FixedString.Capacity];
-            uint length = component.title.CopyTo(titleBuffer);
-            SDLWindow sdlWindow = new(titleBuffer.Slice(0, length), transform.size, flags);
+            USpan<char> titleBuffer = stackalloc char[component.title.Length];
+            component.title.CopyTo(titleBuffer);
+            SDLWindow sdlWindow = new(titleBuffer, transform.size, flags);
 
             if ((component.windowFlags & WindowFlags.Transparent) != 0)
             {
@@ -550,9 +552,9 @@ namespace Windows.Systems
             //make sure name of window matches entity
             if (!component.title.Equals(sdlWindow.Title))
             {
-                USpan<char> buffer = stackalloc char[(int)FixedString.Capacity];
-                uint length = component.title.CopyTo(buffer);
-                sdlWindow.Title = buffer.Slice(0, length).ToString();
+                USpan<char> buffer = stackalloc char[component.title.Length];
+                component.title.CopyTo(buffer);
+                sdlWindow.Title = buffer.ToString();
             }
 
             lastState.flags = component.windowFlags;

@@ -2,11 +2,13 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Unmanaged;
 using static SDL3.SDL3;
 
 namespace SDL3
 {
+    [SkipLocalsInit]
     public unsafe struct SDLWindow : IDisposable
     {
         private readonly SDL_Window window;
