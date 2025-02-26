@@ -128,7 +128,7 @@ namespace Windows.Systems
                                 ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(out bool contains);
                                 if (!contains)
                                 {
-                                    transform = ref window.AddComponent(new WindowTransform());
+                                    transform = ref window.AddComponent<WindowTransform>();
                                 }
 
                                 transform.position = new(x, y);
@@ -154,7 +154,7 @@ namespace Windows.Systems
                                 ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(out bool contains);
                                 if (!contains)
                                 {
-                                    transform = ref window.AddComponent(new WindowTransform());
+                                    transform = ref window.AddComponent<WindowTransform>();
                                 }
 
                                 transform.size = new(width, height);
