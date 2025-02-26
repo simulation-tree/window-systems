@@ -413,9 +413,9 @@ namespace Windows.Systems
                     //add sdl extensions that describe vulkan
                     flags |= SDL_WindowFlags.Vulkan;
                     FixedString[] sdlVulkanExtensions = sdlLibrary.GetVulkanInstanceExtensions();
-                    USpan<DestinationExtension> extensions = window.GetArray<DestinationExtension>();
+                    Array<DestinationExtension> extensions = window.GetArray<DestinationExtension>();
                     uint previousLength = extensions.Length;
-                    extensions = window.ResizeArray<DestinationExtension>(previousLength + (uint)sdlVulkanExtensions.Length);
+                    extensions.Length += (uint)sdlVulkanExtensions.Length;
                     for (uint i = 0; i < sdlVulkanExtensions.Length; i++)
                     {
                         extensions[previousLength + i] = new(sdlVulkanExtensions[i]);
