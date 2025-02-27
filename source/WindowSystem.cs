@@ -48,8 +48,8 @@ namespace Windows.Systems
 
         void ISystem.Update(in SystemContainer systemContainer, in World world, in TimeSpan delta)
         {
-            ComponentType windowType = world.Schema.GetComponent<IsWindow>();
-            ComponentType destinationType = world.Schema.GetComponent<IsDestination>();
+            ComponentType windowType = world.Schema.GetComponentType<IsWindow>();
+            ComponentType destinationType = world.Schema.GetComponentType<IsDestination>();
 
             if (systemContainer.World == world)
             {
@@ -67,7 +67,7 @@ namespace Windows.Systems
 
         void ISystem.Finish(in SystemContainer systemContainer, in World world)
         {
-            ComponentType windowType = world.Schema.GetComponent<IsWindow>();
+            ComponentType windowType = world.Schema.GetComponentType<IsWindow>();
             CloseRemainingWindows(world, windowType);
 
             if (systemContainer.World == world)
@@ -84,7 +84,7 @@ namespace Windows.Systems
         {
             foreach (Chunk chunk in world.Chunks)
             {
-                if (chunk.Definition.Contains(windowType))
+                if (chunk.Definition.ContainsComponent(windowType))
                 {
                     USpan<uint> entities = chunk.Entities;
                     USpan<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
@@ -268,7 +268,7 @@ namespace Windows.Systems
         {
             foreach (Chunk chunk in world.Chunks)
             {
-                if (chunk.Definition.Contains(windowType))
+                if (chunk.Definition.ContainsComponent(windowType))
                 {
                     USpan<uint> entities = chunk.Entities;
                     USpan<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
@@ -318,7 +318,7 @@ namespace Windows.Systems
             foreach (Chunk chunk in world.Chunks)
             {
                 Definition key = chunk.Definition;
-                if (key.Contains(windowType) && key.Contains(destinationType))
+                if (key.ContainsComponent(windowType) && key.ContainsComponent(destinationType))
                 {
                     USpan<uint> entities = chunk.Entities;
                     USpan<IsDestination> destinationComponents = chunk.GetComponents<IsDestination>(destinationType);
