@@ -413,7 +413,7 @@ namespace Windows.Systems
                     //add sdl extensions that describe vulkan
                     flags |= SDL_WindowFlags.Vulkan;
                     FixedString[] sdlVulkanExtensions = sdlLibrary.GetVulkanInstanceExtensions();
-                    Array<DestinationExtension> extensions = window.GetArray<DestinationExtension>();
+                    Values<DestinationExtension> extensions = window.GetArray<DestinationExtension>();
                     uint previousLength = extensions.Length;
                     extensions.Length += (uint)sdlVulkanExtensions.Length;
                     for (uint i = 0; i < sdlVulkanExtensions.Length; i++)
