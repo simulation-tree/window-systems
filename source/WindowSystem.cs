@@ -290,13 +290,13 @@ namespace Windows.Systems
                         else
                         {
                             //create the surface
-                            if (!windowEntity.TryGetSurfaceInUse(out _) && windowEntity.TryGetRendererInstanceInUse(out Allocation instance))
+                            if (!windowEntity.TryGetSurfaceInUse(out _) && windowEntity.TryGetRendererInstanceInUse(out MemoryAddress instance))
                             {
-                                FixedString label = windowEntity.RendererLabel;
+                                ASCIIText256 label = windowEntity.RendererLabel;
                                 SDLWindow existingWindow = GetWindow(windowEntity);
                                 if (label.Equals("vulkan"))
                                 {
-                                    Allocation surface = existingWindow.CreateVulkanSurface(instance);
+                                    MemoryAddress surface = existingWindow.CreateVulkanSurface(instance);
                                     windowEntity.AddComponent(new SurfaceInUse(surface));
                                     Trace.WriteLine($"Created surface `{surface}` for window `{windowEntity}` using renderer `{label}`");
                                 }
@@ -405,14 +405,14 @@ namespace Windows.Systems
             }
 
             //add extensions
-            FixedString rendererLabel = window.RendererLabel;
+            ASCIIText256 rendererLabel = window.RendererLabel;
             if (rendererLabel != default)
             {
                 if (rendererLabel.Equals("vulkan"))
                 {
                     //add sdl extensions that describe vulkan
                     flags |= SDL_WindowFlags.Vulkan;
-                    FixedString[] sdlVulkanExtensions = sdlLibrary.GetVulkanInstanceExtensions();
+                    ASCIIText256[] sdlVulkanExtensions = sdlLibrary.GetVulkanInstanceExtensions();
                     Values<DestinationExtension> extensions = window.GetArray<DestinationExtension>();
                     uint previousLength = extensions.Length;
                     extensions.Length += (uint)sdlVulkanExtensions.Length;

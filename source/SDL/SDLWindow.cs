@@ -224,13 +224,13 @@ namespace SDL3
             return (width, height);
         }
 
-        public readonly Allocation CreateVulkanSurface(Allocation vulkanInstance)
+        public readonly MemoryAddress CreateVulkanSurface(MemoryAddress vulkanInstance)
         {
             ThrowIfDisposed();
 
             ulong* surfacePointer = stackalloc ulong[1];
             nint allocator = 0;
-            bool success = SDL_Vulkan_CreateSurface(window, vulkanInstance, allocator, &surfacePointer);
+            bool success = SDL_Vulkan_CreateSurface(window, vulkanInstance.Address, allocator, &surfacePointer);
             if (!success)
             {
                 throw new Exception($"Could not create surface: {SDL_GetError()}");

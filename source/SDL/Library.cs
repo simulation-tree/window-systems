@@ -186,12 +186,12 @@ namespace SDL3
             SDL_SetHint(name, value);
         }
 
-        public readonly FixedString[] GetVulkanInstanceExtensions()
+        public readonly ASCIIText256[] GetVulkanInstanceExtensions()
         {
             ThrowIfDisposed();
 
             string[] extensionNames = SDL_Vulkan_GetInstanceExtensions();
-            USpan<FixedString> extensions = stackalloc FixedString[extensionNames.Length];
+            USpan<ASCIIText256> extensions = stackalloc ASCIIText256[extensionNames.Length];
             for (uint i = 0; i < extensionNames.Length; i++)
             {
                 extensions[i] = extensionNames[i];
