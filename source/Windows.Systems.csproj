@@ -13,8 +13,8 @@
         <IsTrimmable>True</IsTrimmable>
         <Title>Window Systems</Title>
         <Authors>popcron</Authors>
-        <Company>game-simulations</Company>
-        <RepositoryUrl>https://github.com/game-simulations/window-systems</RepositoryUrl>
+        <Company>simulation-tree</Company>
+        <RepositoryUrl>https://github.com/simulation-tree/window-systems</RepositoryUrl>
         <PackageId/>
     </PropertyGroup>
 
