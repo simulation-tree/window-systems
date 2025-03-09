@@ -152,7 +152,7 @@ namespace SDL3
             window = existingWindow;
         }
 
-        public SDLWindow(USpan<char> title, Vector2 size, SDL_WindowFlags flags)
+        public SDLWindow(System.Span<char> title, Vector2 size, SDL_WindowFlags flags)
         {
             width = size.X;
             height = size.Y;

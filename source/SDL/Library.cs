@@ -14,7 +14,7 @@ namespace SDL3
         private readonly Text platform;
 
         public readonly bool IsDisposed => platform.IsDisposed;
-        public readonly USpan<char> Platform => platform.AsSpan();
+        public readonly ReadOnlySpan<char> Platform => platform.AsSpan();
 
         /// <summary>
         /// Checks if the cursor is visible.
@@ -179,7 +179,7 @@ namespace SDL3
             SDL_SetCursor(cursor);
         }
 
-        public readonly void SetHint(USpan<byte> name, bool value)
+        public readonly void SetHint(ReadOnlySpan<byte> name, bool value)
         {
             ThrowIfDisposed();
 
@@ -191,8 +191,8 @@ namespace SDL3
             ThrowIfDisposed();
 
             string[] extensionNames = SDL_Vulkan_GetInstanceExtensions();
-            USpan<ASCIIText256> extensions = stackalloc ASCIIText256[extensionNames.Length];
-            for (uint i = 0; i < extensionNames.Length; i++)
+            Span<ASCIIText256> extensions = stackalloc ASCIIText256[extensionNames.Length];
+            for (int i = 0; i < extensionNames.Length; i++)
             {
                 extensions[i] = extensionNames[i];
             }

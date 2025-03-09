@@ -86,13 +86,13 @@ namespace Windows.Systems
             {
                 if (chunk.Definition.ContainsComponent(windowType))
                 {
-                    USpan<uint> entities = chunk.Entities;
-                    USpan<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
-                    for (uint i = 0; i < components.Length; i++)
+                    ReadOnlySpan<uint> entities = chunk.Entities;
+                    Span<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
+                    for (int i = 0; i < components.Length; i++)
                     {
                         ref IsWindow component = ref components[i];
                         Window windowEntity = new Entity(world, entities[i]).As<Window>();
-                        if (windowEntities.TryIndexOf(windowEntity, out uint index))
+                        if (windowEntities.TryIndexOf(windowEntity, out int index))
                         {
                             SDLWindow sdlWindow = sdlLibrary.GetWindow(windowIds[index]);
                             sdlWindow.Dispose();
@@ -112,7 +112,7 @@ namespace Windows.Systems
             {
                 if (sdlEvent.type == SDL_EventType.WindowMoved)
                 {
-                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         Window window = windowEntities[index];
                         WindowState state = window.State;
@@ -138,7 +138,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowResized)
                 {
-                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         Window window = windowEntities[index];
                         WindowState state = window.State;
@@ -164,7 +164,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowEnterFullscreen)
                 {
-                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         Window window = windowEntities[index];
                         ref IsWindow component = ref window.GetComponent<IsWindow>();
@@ -173,7 +173,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowLeaveFullscreen)
                 {
-                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         Window window = windowEntities[index];
                         ref IsWindow component = ref window.GetComponent<IsWindow>();
@@ -182,7 +182,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowMaximized)
                 {
-                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         Window window = windowEntities[index];
                         ref IsWindow component = ref window.GetComponent<IsWindow>();
@@ -191,7 +191,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowMinimized)
                 {
-                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         Window window = windowEntities[index];
                         ref IsWindow component = ref window.GetComponent<IsWindow>();
@@ -200,7 +200,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowRestored)
                 {
-                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         Window window = windowEntities[index];
                         ref IsWindow component = ref window.GetComponent<IsWindow>();
@@ -210,7 +210,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowFocusGained)
                 {
-                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         ref SDLWindowState lastState = ref lastWindowStates[index];
                         if (!lastState.flags.HasFlag(WindowFlags.Focused))
@@ -224,7 +224,7 @@ namespace Windows.Systems
                 }
                 else if (sdlEvent.type == SDL_EventType.WindowFocusLost)
                 {
-                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out uint index))
+                    if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         ref SDLWindowState lastState = ref lastWindowStates[index];
                         if (lastState.flags.HasFlag(WindowFlags.Focused))
@@ -245,7 +245,7 @@ namespace Windows.Systems
 
         private readonly void HandleCloseRequest(uint windowId)
         {
-            if (windowIds.TryIndexOf(windowId, out uint index))
+            if (windowIds.TryIndexOf(windowId, out int index))
             {
                 Window window = windowEntities[index];
                 WindowCloseCallback closeCallback = window.CloseCallback;
@@ -270,9 +270,9 @@ namespace Windows.Systems
             {
                 if (chunk.Definition.ContainsComponent(windowType))
                 {
-                    USpan<uint> entities = chunk.Entities;
-                    USpan<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
-                    for (uint i = 0; i < entities.Length; i++)
+                    ReadOnlySpan<uint> entities = chunk.Entities;
+                    Span<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
+                    for (int i = 0; i < entities.Length; i++)
                     {
                         ref IsWindow window = ref components[i];
                         Window windowEntity = new Entity(world, entities[i]).As<Window>();
@@ -320,9 +320,9 @@ namespace Windows.Systems
                 Definition key = chunk.Definition;
                 if (key.ContainsComponent(windowType) && key.ContainsComponent(destinationType))
                 {
-                    USpan<uint> entities = chunk.Entities;
-                    USpan<IsDestination> destinationComponents = chunk.GetComponents<IsDestination>(destinationType);
-                    for (uint i = 0; i < entities.Length; i++)
+                    ReadOnlySpan<uint> entities = chunk.Entities;
+                    Span<IsDestination> destinationComponents = chunk.GetComponents<IsDestination>(destinationType);
+                    for (int i = 0; i < entities.Length; i++)
                     {
                         ref IsDestination destination = ref destinationComponents[i];
                         Window windowEntity = new Entity(world, entities[i]).As<Window>();
@@ -345,7 +345,7 @@ namespace Windows.Systems
 
         private readonly void DestroyWindowsOfDestroyedEntities()
         {
-            for (uint i = windowEntities.Count - 1; i != uint.MaxValue; i--)
+            for (int i = windowEntities.Count - 1; i >= 0; i--)
             {
                 Window windowEntity = windowEntities[i];
                 if (windowEntity.IsDestroyed)
@@ -414,9 +414,9 @@ namespace Windows.Systems
                     flags |= SDL_WindowFlags.Vulkan;
                     ASCIIText256[] sdlVulkanExtensions = sdlLibrary.GetVulkanInstanceExtensions();
                     Values<DestinationExtension> extensions = window.GetArray<DestinationExtension>();
-                    uint previousLength = extensions.Length;
-                    extensions.Length += (uint)sdlVulkanExtensions.Length;
-                    for (uint i = 0; i < sdlVulkanExtensions.Length; i++)
+                    int previousLength = extensions.Length;
+                    extensions.Length += sdlVulkanExtensions.Length;
+                    for (int i = 0; i < sdlVulkanExtensions.Length; i++)
                     {
                         extensions[previousLength + i] = new(sdlVulkanExtensions[i]);
                     }
@@ -427,7 +427,7 @@ namespace Windows.Systems
                 }
             }
 
-            USpan<char> titleBuffer = stackalloc char[component.title.Length];
+            System.Span<char> titleBuffer = stackalloc char[component.title.Length];
             component.title.CopyTo(titleBuffer);
             SDLWindow sdlWindow = new(titleBuffer, transform.size, flags);
 
@@ -442,7 +442,7 @@ namespace Windows.Systems
 
         private readonly SDLWindow GetWindow(Window window)
         {
-            if (windowEntities.TryIndexOf(window, out uint index))
+            if (windowEntities.TryIndexOf(window, out int index))
             {
                 return sdlLibrary.GetWindow(windowIds[index]);
             }
@@ -455,7 +455,7 @@ namespace Windows.Systems
         /// </summary>
         private readonly void UpdateWindowToMatchEntity(Window window, ref IsWindow component)
         {
-            uint index = windowEntities.IndexOf(window);
+            int index = windowEntities.IndexOf(window);
             SDLWindow sdlWindow = sdlLibrary.GetWindow(windowIds[index]);
             ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(out bool containsTransform);
             ref SDLWindowState lastState = ref lastWindowStates[index];
@@ -553,7 +553,7 @@ namespace Windows.Systems
             //make sure name of window matches entity
             if (!component.title.Equals(sdlWindow.Title))
             {
-                USpan<char> buffer = stackalloc char[component.title.Length];
+                System.Span<char> buffer = stackalloc char[component.title.Length];
                 component.title.CopyTo(buffer);
                 sdlWindow.Title = buffer.ToString();
             }
