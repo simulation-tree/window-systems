@@ -427,7 +427,7 @@ namespace Windows.Systems
                 }
             }
 
-            System.Span<char> titleBuffer = stackalloc char[component.title.Length];
+            Span<char> titleBuffer = stackalloc char[component.title.Length];
             component.title.CopyTo(titleBuffer);
             SDLWindow sdlWindow = new(titleBuffer, transform.size, flags);
 
@@ -553,7 +553,7 @@ namespace Windows.Systems
             //make sure name of window matches entity
             if (!component.title.Equals(sdlWindow.Title))
             {
-                System.Span<char> buffer = stackalloc char[component.title.Length];
+                Span<char> buffer = stackalloc char[component.title.Length];
                 component.title.CopyTo(buffer);
                 sdlWindow.Title = buffer.ToString();
             }

@@ -21,9 +21,9 @@ namespace SDL3
         public readonly uint ID => (uint)SDL_GetWindowID(window);
         public readonly SDL_WindowFlags Flags => SDL_GetWindowFlags(window);
 
-        public readonly string Title
+        public readonly ReadOnlySpan<char> Title
         {
-            get => SDL_GetWindowTitle(window) ?? "";
+            get => SDL_GetWindowTitle(window) ?? default;
             set => SDL_SetWindowTitle(window, value);
         }
 
@@ -152,7 +152,7 @@ namespace SDL3
             window = existingWindow;
         }
 
-        public SDLWindow(System.Span<char> title, Vector2 size, SDL_WindowFlags flags)
+        public SDLWindow(ReadOnlySpan<char> title, Vector2 size, SDL_WindowFlags flags)
         {
             width = size.X;
             height = size.Y;
