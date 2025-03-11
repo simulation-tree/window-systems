@@ -414,11 +414,9 @@ namespace Windows.Systems
                     flags |= SDL_WindowFlags.Vulkan;
                     ASCIIText256[] sdlVulkanExtensions = sdlLibrary.GetVulkanInstanceExtensions();
                     Values<DestinationExtension> extensions = window.GetArray<DestinationExtension>();
-                    int previousLength = extensions.Length;
-                    extensions.Length += sdlVulkanExtensions.Length;
                     for (int i = 0; i < sdlVulkanExtensions.Length; i++)
                     {
-                        extensions[previousLength + i] = new(sdlVulkanExtensions[i]);
+                        extensions.Add(new(sdlVulkanExtensions[i]));
                     }
                 }
                 else
