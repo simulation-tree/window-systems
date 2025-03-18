@@ -1,5 +1,4 @@
-﻿using Collections;
-using Collections.Generic;
+﻿using Collections.Generic;
 using Rendering;
 using Rendering.Components;
 using SDL3;
@@ -24,34 +23,34 @@ namespace Windows.Systems
         private readonly List<SDLWindowState> lastWindowStates;
         private readonly Dictionary<uint, Entity> displayEntities;
 
-        private WindowSystem(Library library, List<Window> windowEntities, List<uint> windowIds, List<SDLWindowState> lastWindowStates, Dictionary<uint, Entity> displayEntities)
+        public WindowSystem()
         {
-            this.sdlLibrary = library;
-            this.windowEntities = windowEntities;
-            this.windowIds = windowIds;
-            this.lastWindowStates = lastWindowStates;
-            this.displayEntities = displayEntities;
+            sdlLibrary = new();
+            windowEntities = new(16);
+            windowIds = new(16);
+            lastWindowStates = new(16);
+            displayEntities = new(16);
         }
 
-        void ISystem.Start(in SystemContainer systemContainer, in World world)
+        public readonly void Dispose()
         {
-            if (systemContainer.World == world)
-            {
-                Library library = new();
-                List<Window> windowEntities = new();
-                List<uint> windowIds = new();
-                List<SDLWindowState> lastWindowStates = new();
-                Dictionary<uint, Entity> displayEntities = new();
-                systemContainer.Write(new WindowSystem(library, windowEntities, windowIds, lastWindowStates, displayEntities));
-            }
+            displayEntities.Dispose();
+            lastWindowStates.Dispose();
+            windowIds.Dispose();
+            windowEntities.Dispose();
+            sdlLibrary.Dispose();
         }
 
-        void ISystem.Update(in SystemContainer systemContainer, in World world, in TimeSpan delta)
+        void ISystem.Start(in SystemContext context, in World world)
         {
-            ComponentType windowType = world.Schema.GetComponentType<IsWindow>();
-            ComponentType destinationType = world.Schema.GetComponentType<IsDestination>();
+        }
 
-            if (systemContainer.World == world)
+        void ISystem.Update(in SystemContext context, in World world, in TimeSpan delta)
+        {
+            int windowType = world.Schema.GetComponentType<IsWindow>();
+            int destinationType = world.Schema.GetComponentType<IsDestination>();
+
+            if (context.World == world)
             {
                 DestroyWindowsOfDestroyedEntities();
             }
@@ -59,36 +58,27 @@ namespace Windows.Systems
             UpdateWindowsToMatchEntities(world, windowType);
             UpdateDestinationSizes(world, windowType, destinationType);
 
-            if (systemContainer.World == world)
+            if (context.World == world)
             {
                 UpdateEntitiesToMatchWindows();
             }
         }
 
-        void ISystem.Finish(in SystemContainer systemContainer, in World world)
+        void ISystem.Finish(in SystemContext context, in World world)
         {
-            ComponentType windowType = world.Schema.GetComponentType<IsWindow>();
+            int windowType = world.Schema.GetComponentType<IsWindow>();
             CloseRemainingWindows(world, windowType);
-
-            if (systemContainer.World == world)
-            {
-                displayEntities.Dispose();
-                lastWindowStates.Dispose();
-                windowIds.Dispose();
-                windowEntities.Dispose();
-                sdlLibrary.Dispose();
-            }
         }
 
-        private readonly void CloseRemainingWindows(World world, ComponentType windowType)
+        private readonly void CloseRemainingWindows(World world, int windowType)
         {
             foreach (Chunk chunk in world.Chunks)
             {
                 if (chunk.Definition.ContainsComponent(windowType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
-                    Span<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
-                    for (int i = 0; i < components.Length; i++)
+                    ComponentEnumerator<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
+                    for (int i = 0; i < components.length; i++)
                     {
                         ref IsWindow component = ref components[i];
                         Window windowEntity = new Entity(world, entities[i]).As<Window>();
@@ -264,14 +254,14 @@ namespace Windows.Systems
             }
         }
 
-        private readonly void UpdateWindowsToMatchEntities(World world, ComponentType windowType)
+        private readonly void UpdateWindowsToMatchEntities(World world, int windowType)
         {
             foreach (Chunk chunk in world.Chunks)
             {
                 if (chunk.Definition.ContainsComponent(windowType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
-                    Span<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
+                    ComponentEnumerator<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
                     for (int i = 0; i < entities.Length; i++)
                     {
                         ref IsWindow window = ref components[i];
@@ -313,7 +303,7 @@ namespace Windows.Systems
             }
         }
 
-        private readonly void UpdateDestinationSizes(World world, ComponentType windowType, ComponentType destinationType)
+        private readonly void UpdateDestinationSizes(World world, int windowType, int destinationType)
         {
             foreach (Chunk chunk in world.Chunks)
             {
@@ -321,7 +311,7 @@ namespace Windows.Systems
                 if (key.ContainsComponent(windowType) && key.ContainsComponent(destinationType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
-                    Span<IsDestination> destinationComponents = chunk.GetComponents<IsDestination>(destinationType);
+                    ComponentEnumerator<IsDestination> destinationComponents = chunk.GetComponents<IsDestination>(destinationType);
                     for (int i = 0; i < entities.Length; i++)
                     {
                         ref IsDestination destination = ref destinationComponents[i];
