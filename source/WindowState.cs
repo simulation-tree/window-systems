@@ -1,6 +1,4 @@
-﻿using Windows.Components;
-
-namespace Windows.Systems
+﻿namespace Windows.Systems
 {
     public struct SDLWindowState
     {
