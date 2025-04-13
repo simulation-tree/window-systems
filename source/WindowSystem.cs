@@ -445,17 +445,22 @@ namespace Windows.Systems
         {
             int index = windowEntities.IndexOf(window);
             SDLWindow sdlWindow = sdlLibrary.GetWindow(windowIds[index]);
+            SDLDisplay sdlDisplay = sdlWindow.Display;
+            (uint width, uint height) displaySize = sdlDisplay.Size;
             ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(out bool containsTransform);
             ref SDLWindowState lastState = ref lastWindowStates[index];
             if (containsTransform)
             {
-                int x = (int)transform.position.X;
-                int y = (int)transform.position.Y;
+                Vector2 position = transform.position;
+                position.X += displaySize.width * transform.anchor.X;
+                position.Y += displaySize.height * transform.anchor.Y;
+                int x = (int)position.X;
+                int y = (int)position.Y;
                 if (lastState.x != x || lastState.y != y)
                 {
                     lastState.x = x;
                     lastState.y = y;
-                    sdlWindow.Position = transform.position;
+                    sdlWindow.Position = position;
                 }
 
                 int width = (int)transform.size.X;
@@ -550,10 +555,9 @@ namespace Windows.Systems
             lastState.state = component.windowState;
 
             //update referenced display
-            SDLDisplay display = sdlWindow.Display;
             World world = window.world;
-            Entity displayEntity = GetOrCreateDisplayEntity(world, display);
-            IsDisplay displayComponent = new(display.Width, display.Height, display.RefreshRate);
+            Entity displayEntity = GetOrCreateDisplayEntity(world, sdlDisplay);
+            IsDisplay displayComponent = new(displaySize.width, displaySize.height, sdlDisplay.RefreshRate);
             displayEntity.SetComponent(displayComponent);
 
             if (component.displayReference == default)
