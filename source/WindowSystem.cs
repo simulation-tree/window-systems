@@ -50,7 +50,7 @@ namespace Windows.Systems
             int windowType = world.Schema.GetComponentType<IsWindow>();
             int destinationType = world.Schema.GetComponentType<IsDestination>();
 
-            if (context.World == world)
+            if (context.IsSimulatorWorld(world))
             {
                 DestroyWindowsOfDestroyedEntities();
             }
@@ -58,7 +58,7 @@ namespace Windows.Systems
             UpdateWindowsToMatchEntities(world, windowType);
             UpdateDestinationSizes(world, windowType, destinationType);
 
-            if (context.World == world)
+            if (context.IsSimulatorWorld(world))
             {
                 UpdateEntitiesToMatchWindows();
             }
