@@ -15,16 +15,18 @@ using Worlds;
 namespace Windows.Systems
 {
     [SkipLocalsInit]
-    public readonly partial struct WindowSystem : ISystem
+    public class WindowSystem : ISystem, IDisposable
     {
+        private readonly World world;
         private readonly Library sdlLibrary;
         private readonly List<Window> windowEntities;
         private readonly List<uint> windowIds;
         private readonly List<SDLWindowState> lastWindowStates;
         private readonly Dictionary<uint, Entity> displayEntities;
 
-        public WindowSystem()
+        public WindowSystem(World world)
         {
+            this.world = world;
             sdlLibrary = new();
             windowEntities = new(16);
             windowIds = new(16);
@@ -32,8 +34,11 @@ namespace Windows.Systems
             displayEntities = new(16);
         }
 
-        public readonly void Dispose()
+        public void Dispose()
         {
+            int windowType = world.Schema.GetComponentType<IsWindow>();
+            CloseRemainingWindows(windowType);
+
             displayEntities.Dispose();
             lastWindowStates.Dispose();
             windowIds.Dispose();
@@ -41,36 +46,19 @@ namespace Windows.Systems
             sdlLibrary.Dispose();
         }
 
-        void ISystem.Start(in SystemContext context, in World world)
+        void ISystem.Update(Simulator simulator, double deltaTime)
         {
-        }
-
-        void ISystem.Update(in SystemContext context, in World world, in TimeSpan delta)
-        {
+            World world = simulator.world;
             int windowType = world.Schema.GetComponentType<IsWindow>();
             int destinationType = world.Schema.GetComponentType<IsDestination>();
 
-            if (context.IsSimulatorWorld(world))
-            {
-                DestroyWindowsOfDestroyedEntities();
-            }
-
-            UpdateWindowsToMatchEntities(world, windowType);
-            UpdateDestinationSizes(world, windowType, destinationType);
-
-            if (context.IsSimulatorWorld(world))
-            {
-                UpdateEntitiesToMatchWindows();
-            }
+            DestroyWindowsOfDestroyedEntities();
+            UpdateWindowsToMatchEntities(windowType);
+            UpdateDestinationSizes(windowType, destinationType);
+            UpdateEntitiesToMatchWindows();
         }
 
-        void ISystem.Finish(in SystemContext context, in World world)
-        {
-            int windowType = world.Schema.GetComponentType<IsWindow>();
-            CloseRemainingWindows(world, windowType);
-        }
-
-        private readonly void CloseRemainingWindows(World world, int windowType)
+        private void CloseRemainingWindows(int windowType)
         {
             foreach (Chunk chunk in world.Chunks)
             {
@@ -81,7 +69,7 @@ namespace Windows.Systems
                     for (int i = 0; i < components.length; i++)
                     {
                         ref IsWindow component = ref components[i];
-                        Window windowEntity = new Entity(world, entities[i]).As<Window>();
+                        Window windowEntity = Entity.Get<Window>(world, entities[i]);
                         if (windowEntities.TryIndexOf(windowEntity, out int index))
                         {
                             SDLWindow sdlWindow = sdlLibrary.GetWindow(windowIds[index]);
@@ -96,7 +84,7 @@ namespace Windows.Systems
         /// Polls for changes to windows and updates their entities to match if any property
         /// is different from the presentation.
         /// </summary>
-        private readonly void UpdateEntitiesToMatchWindows()
+        private void UpdateEntitiesToMatchWindows()
         {
             while (sdlLibrary.PollEvent(out SDL_Event sdlEvent))
             {
@@ -233,7 +221,7 @@ namespace Windows.Systems
             }
         }
 
-        private readonly void HandleCloseRequest(uint windowId)
+        private void HandleCloseRequest(uint windowId)
         {
             if (windowIds.TryIndexOf(windowId, out int index))
             {
@@ -254,7 +242,7 @@ namespace Windows.Systems
             }
         }
 
-        private readonly void UpdateWindowsToMatchEntities(World world, int windowType)
+        private void UpdateWindowsToMatchEntities(int windowType)
         {
             foreach (Chunk chunk in world.Chunks)
             {
@@ -282,13 +270,13 @@ namespace Windows.Systems
                             //create the surface
                             if (!windowEntity.TryGetSurfaceInUse(out _) && windowEntity.TryGetRendererInstanceInUse(out MemoryAddress instance))
                             {
-                                ASCIIText256 label = windowEntity.RendererLabel;
+                                RendererLabel label = windowEntity.RendererLabel;
                                 SDLWindow existingWindow = GetWindow(windowEntity);
                                 if (label.Equals("vulkan"))
                                 {
                                     MemoryAddress surface = existingWindow.CreateVulkanSurface(instance);
                                     windowEntity.AddComponent(new SurfaceInUse(surface));
-                                    Trace.WriteLine($"Created surface `{surface}` for window `{windowEntity}` using renderer `{label}`");
+                                    Trace.WriteLine($"Created surface `{surface}` for window `{windowEntity}`");
                                 }
                                 else
                                 {
@@ -303,7 +291,7 @@ namespace Windows.Systems
             }
         }
 
-        private readonly void UpdateDestinationSizes(World world, int windowType, int destinationType)
+        private void UpdateDestinationSizes(int windowType, int destinationType)
         {
             foreach (Chunk chunk in world.Chunks)
             {
@@ -333,7 +321,7 @@ namespace Windows.Systems
             }
         }
 
-        private readonly void DestroyWindowsOfDestroyedEntities()
+        private void DestroyWindowsOfDestroyedEntities()
         {
             for (int i = windowEntities.Count - 1; i >= 0; i--)
             {
@@ -351,7 +339,7 @@ namespace Windows.Systems
             }
         }
 
-        private readonly SDLWindow CreateWindow(Window window, ref IsWindow component)
+        private SDLWindow CreateWindow(Window window, ref IsWindow component)
         {
             SDL_WindowFlags flags = default;
             if ((component.windowFlags & WindowFlags.Borderless) != 0)
@@ -395,7 +383,7 @@ namespace Windows.Systems
             }
 
             //add extensions
-            ASCIIText256 rendererLabel = window.RendererLabel;
+            RendererLabel rendererLabel = window.RendererLabel;
             if (rendererLabel != default)
             {
                 if (rendererLabel.Equals("vulkan"))
@@ -428,7 +416,7 @@ namespace Windows.Systems
             return sdlWindow;
         }
 
-        private readonly SDLWindow GetWindow(Window window)
+        private SDLWindow GetWindow(Window window)
         {
             if (windowEntities.TryIndexOf(window, out int index))
             {
@@ -441,7 +429,7 @@ namespace Windows.Systems
         /// <summary>
         /// Updates the SDL window to match the entity.
         /// </summary>
-        private readonly void UpdateWindowToMatchEntity(Window window, ref IsWindow component)
+        private void UpdateWindowToMatchEntity(Window window, ref IsWindow component)
         {
             int index = windowEntities.IndexOf(window);
             SDLWindow sdlWindow = sdlLibrary.GetWindow(windowIds[index]);
@@ -566,7 +554,7 @@ namespace Windows.Systems
             }
         }
 
-        private readonly Entity GetOrCreateDisplayEntity(World world, SDLDisplay display)
+        private Entity GetOrCreateDisplayEntity(World world, SDLDisplay display)
         {
             uint displayId = display.ID;
             if (!displayEntities.TryGetValue(displayId, out Entity displayEntity))
