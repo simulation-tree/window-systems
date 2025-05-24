@@ -23,20 +23,35 @@ namespace Windows.Systems
         private readonly List<uint> windowIds;
         private readonly List<SDLWindowState> lastWindowStates;
         private readonly Dictionary<uint, Entity> displayEntities;
+        private readonly int windowType;
+        private readonly int displayType;
+        private readonly int destinationType;
+        private readonly int transformType;
+        private readonly int destinationExtensionType;
+        private readonly int surfaceInUseType;
+        private readonly int rendererInstanceInUseType;
 
-        public WindowSystem(World world)
+        public WindowSystem(Simulator simulator)
         {
-            this.world = world;
+            world = simulator.world;
             sdlLibrary = new();
             windowEntities = new(16);
             windowIds = new(16);
             lastWindowStates = new(16);
             displayEntities = new(16);
+
+            Schema schema = simulator.world.Schema;
+            windowType = schema.GetComponentType<IsWindow>();
+            displayType = schema.GetComponentType<IsDisplay>();
+            destinationType = schema.GetComponentType<IsDestination>();
+            transformType = schema.GetComponentType<WindowTransform>();
+            destinationExtensionType = schema.GetArrayType<DestinationExtension>();
+            surfaceInUseType = schema.GetComponentType<SurfaceInUse>();
+            rendererInstanceInUseType = schema.GetComponentType<RendererInstanceInUse>();
         }
 
         public void Dispose()
         {
-            int windowType = world.Schema.GetComponentType<IsWindow>();
             CloseRemainingWindows(windowType);
 
             displayEntities.Dispose();
@@ -48,13 +63,9 @@ namespace Windows.Systems
 
         void ISystem.Update(Simulator simulator, double deltaTime)
         {
-            World world = simulator.world;
-            int windowType = world.Schema.GetComponentType<IsWindow>();
-            int destinationType = world.Schema.GetComponentType<IsDestination>();
-
             DestroyWindowsOfDestroyedEntities();
-            UpdateWindowsToMatchEntities(windowType);
-            UpdateDestinationSizes(windowType, destinationType);
+            UpdateWindowsToMatchEntities();
+            UpdateDestinationSizes();
             UpdateEntitiesToMatchWindows();
         }
 
@@ -103,10 +114,10 @@ namespace Windows.Systems
                             {
                                 lastState.x = x;
                                 lastState.y = y;
-                                ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(out bool contains);
+                                ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(transformType, out bool contains);
                                 if (!contains)
                                 {
-                                    transform = ref window.AddComponent<WindowTransform>();
+                                    transform = ref window.AddComponent<WindowTransform>(transformType);
                                 }
 
                                 transform.position = new(x, y);
@@ -129,10 +140,10 @@ namespace Windows.Systems
                             {
                                 lastState.width = width;
                                 lastState.height = height;
-                                ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(out bool contains);
+                                ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(transformType, out bool contains);
                                 if (!contains)
                                 {
-                                    transform = ref window.AddComponent<WindowTransform>();
+                                    transform = ref window.AddComponent<WindowTransform>(transformType);
                                 }
 
                                 transform.size = new(width, height);
@@ -145,7 +156,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         Window window = windowEntities[index];
-                        ref IsWindow component = ref window.GetComponent<IsWindow>();
+                        ref IsWindow component = ref window.GetComponent<IsWindow>(windowType);
                         component.windowState = WindowState.Fullscreen;
                     }
                 }
@@ -154,7 +165,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         Window window = windowEntities[index];
-                        ref IsWindow component = ref window.GetComponent<IsWindow>();
+                        ref IsWindow component = ref window.GetComponent<IsWindow>(windowType);
                         component.windowState = WindowState.Windowed;
                     }
                 }
@@ -163,7 +174,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         Window window = windowEntities[index];
-                        ref IsWindow component = ref window.GetComponent<IsWindow>();
+                        ref IsWindow component = ref window.GetComponent<IsWindow>(windowType);
                         component.windowState = WindowState.Maximized;
                     }
                 }
@@ -172,7 +183,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         Window window = windowEntities[index];
-                        ref IsWindow component = ref window.GetComponent<IsWindow>();
+                        ref IsWindow component = ref window.GetComponent<IsWindow>(windowType);
                         component.windowFlags |= WindowFlags.Minimized;
                     }
                 }
@@ -181,7 +192,7 @@ namespace Windows.Systems
                     if (windowIds.TryIndexOf((uint)sdlEvent.window.windowID, out int index))
                     {
                         Window window = windowEntities[index];
-                        ref IsWindow component = ref window.GetComponent<IsWindow>();
+                        ref IsWindow component = ref window.GetComponent<IsWindow>(windowType);
                         component.windowFlags &= ~WindowFlags.Minimized;
                         component.windowState = WindowState.Windowed;
                     }
@@ -194,7 +205,7 @@ namespace Windows.Systems
                         if (!lastState.flags.HasFlag(WindowFlags.Focused))
                         {
                             Window window = windowEntities[index];
-                            ref IsWindow component = ref window.GetComponent<IsWindow>();
+                            ref IsWindow component = ref window.GetComponent<IsWindow>(windowType);
                             lastState.flags |= WindowFlags.Focused;
                             component.windowFlags |= WindowFlags.Focused;
                         }
@@ -208,7 +219,7 @@ namespace Windows.Systems
                         if (lastState.flags.HasFlag(WindowFlags.Focused))
                         {
                             Window window = windowEntities[index];
-                            ref IsWindow component = ref window.GetComponent<IsWindow>();
+                            ref IsWindow component = ref window.GetComponent<IsWindow>(windowType);
                             lastState.flags &= ~WindowFlags.Focused;
                             component.windowFlags &= ~WindowFlags.Focused;
                         }
@@ -242,7 +253,7 @@ namespace Windows.Systems
             }
         }
 
-        private void UpdateWindowsToMatchEntities(int windowType)
+        private void UpdateWindowsToMatchEntities()
         {
             foreach (Chunk chunk in world.Chunks)
             {
@@ -253,7 +264,7 @@ namespace Windows.Systems
                     for (int i = 0; i < entities.Length; i++)
                     {
                         ref IsWindow window = ref components[i];
-                        Window windowEntity = new Entity(world, entities[i]).As<Window>();
+                        Window windowEntity = Entity.Get<Window>(world, entities[i]);
                         if (!windowEntities.Contains(windowEntity))
                         {
                             SDLWindow newWindow = CreateWindow(windowEntity, ref window);
@@ -268,19 +279,19 @@ namespace Windows.Systems
                         else
                         {
                             //create the surface
-                            if (!windowEntity.TryGetSurfaceInUse(out _) && windowEntity.TryGetRendererInstanceInUse(out MemoryAddress instance))
+                            if (!windowEntity.ContainsComponent(surfaceInUseType) && windowEntity.TryGetComponent(rendererInstanceInUseType, out RendererInstanceInUse instance))
                             {
-                                RendererLabel label = windowEntity.RendererLabel;
+                                IsDestination destination = windowEntity.GetComponent<IsDestination>(destinationType);
                                 SDLWindow existingWindow = GetWindow(windowEntity);
-                                if (label.Equals("vulkan"))
+                                if (destination.rendererLabel.Equals("vulkan"))
                                 {
-                                    MemoryAddress surface = existingWindow.CreateVulkanSurface(instance);
-                                    windowEntity.AddComponent(new SurfaceInUse(surface));
+                                    MemoryAddress surface = existingWindow.CreateVulkanSurface(instance.value);
+                                    windowEntity.AddComponent(surfaceInUseType, new SurfaceInUse(surface));
                                     Trace.WriteLine($"Created surface `{surface}` for window `{windowEntity}`");
                                 }
                                 else
                                 {
-                                    throw new NotImplementedException($"Unknown renderer label '{label}', not able to create a surface");
+                                    throw new NotImplementedException($"Unknown renderer label '{destination.rendererLabel}', not able to create a surface");
                                 }
                             }
                         }
@@ -291,7 +302,7 @@ namespace Windows.Systems
             }
         }
 
-        private void UpdateDestinationSizes(int windowType, int destinationType)
+        private void UpdateDestinationSizes()
         {
             foreach (Chunk chunk in world.Chunks)
             {
@@ -303,7 +314,7 @@ namespace Windows.Systems
                     for (int i = 0; i < entities.Length; i++)
                     {
                         ref IsDestination destination = ref destinationComponents[i];
-                        Window windowEntity = new Entity(world, entities[i]).As<Window>();
+                        Window windowEntity = Entity.Get<Window>(world, entities[i]);
                         SDLWindow sdlWindow = GetWindow(windowEntity);
                         (int width, int height) = sdlWindow.GetRealSize();
                         if (sdlWindow.IsMinimized)
@@ -376,7 +387,7 @@ namespace Windows.Systems
                 flags |= SDL_WindowFlags.Fullscreen;
             }
 
-            ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(out bool containsTransform);
+            ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(transformType, out bool containsTransform);
             if (!containsTransform)
             {
                 throw new NullReferenceException($"Window `{window}` is missing expected `{typeof(WindowTransform)}` component");
@@ -391,7 +402,7 @@ namespace Windows.Systems
                     //add sdl extensions that describe vulkan
                     flags |= SDL_WindowFlags.Vulkan;
                     ASCIIText256[] sdlVulkanExtensions = sdlLibrary.GetVulkanInstanceExtensions();
-                    Values<DestinationExtension> extensions = window.GetArray<DestinationExtension>();
+                    Values<DestinationExtension> extensions = window.GetArray<DestinationExtension>(destinationExtensionType);
                     for (int i = 0; i < sdlVulkanExtensions.Length; i++)
                     {
                         extensions.Add(new(sdlVulkanExtensions[i]));
@@ -418,9 +429,18 @@ namespace Windows.Systems
 
         private SDLWindow GetWindow(Window window)
         {
+            ThrowIfWindowIsMissing(window);
+
+            int index = windowEntities.IndexOf(window);
+            return sdlLibrary.GetWindow(windowIds[index]);
+        }
+
+        [Conditional("DEBUG")]
+        private void ThrowIfWindowIsMissing(Window window)
+        {
             if (windowEntities.TryIndexOf(window, out int index))
             {
-                return sdlLibrary.GetWindow(windowIds[index]);
+                return;
             }
 
             throw new InvalidOperationException($"Entity `{window}` is not a known SDL window");
@@ -435,7 +455,7 @@ namespace Windows.Systems
             SDLWindow sdlWindow = sdlLibrary.GetWindow(windowIds[index]);
             SDLDisplay sdlDisplay = sdlWindow.Display;
             (uint width, uint height) displaySize = sdlDisplay.Size;
-            ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(out bool containsTransform);
+            ref WindowTransform transform = ref window.TryGetComponent<WindowTransform>(transformType, out bool containsTransform);
             ref SDLWindowState lastState = ref lastWindowStates[index];
             if (containsTransform)
             {
