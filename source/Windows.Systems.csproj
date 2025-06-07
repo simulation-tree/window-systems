@@ -1,35 +1,44 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-        <RootNamespace>Windows.Systems</RootNamespace>
-        <ImplicitUsings>disable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <PublishAot>true</PublishAot>
-        <StripSymbols>true</StripSymbols>
-        <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
-        <IsAotCompatible>True</IsAotCompatible>
-        <IsTrimmable>True</IsTrimmable>
-        <Title>Window Systems</Title>
-        <Authors>popcron</Authors>
-        <Company>simulation-tree</Company>
-        <RepositoryUrl>https://github.com/simulation-tree/window-systems</RepositoryUrl>
-        <PackageId/>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>Windows.Systems</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishAot>true</PublishAot>
+    <StripSymbols>true</StripSymbols>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
+    <IsAotCompatible>True</IsAotCompatible>
+    <IsTrimmable>True</IsTrimmable>
+    <Title>Window Systems</Title>
+    <Authors>popcron</Authors>
+    <Company>simulation-tree</Company>
+    <RepositoryUrl>https://github.com/simulation-tree/window-systems</RepositoryUrl>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <PackageReference Include="Alimer.Bindings.SDL" Version="3.9.6"/>
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Alimer.Bindings.SDL" Version="3.9.6"/>
+  </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\..\simulation\core\Simulation.Core.csproj"/>
-        <ProjectReference Include="..\..\unmanaged\core\Unmanaged.Core.csproj"/>
-        <ProjectReference Include="..\..\windows\source\Windows.csproj"/>
-        <ProjectReference Include="..\..\simulation\generator\Simulation.Generator.csproj">
-            <OutputItemType>Analyzer</OutputItemType>
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-        </ProjectReference>
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\simulation\core\Simulation.Core.csproj"/>
+    <ProjectReference Include="..\..\unmanaged\core\Unmanaged.Core.csproj"/>
+    <ProjectReference Include="..\..\windows\source\Windows.csproj"/>
+    <ProjectReference Include="..\..\simulation\generator\Simulation.Generator.csproj">
+      <OutputItemType>Analyzer</OutputItemType>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="bin/Debug/net9.0/Windows.Systems.dll" Pack="true" PackagePath="tools/debug/Windows.Systems.dll" Visible="false"/>
+    <Content Include="bin/Debug/net9.0/Windows.Systems.xml" Pack="true" PackagePath="tools/debug/Windows.Systems.xml" Visible="false"/>
+    <Content Include="bin/Release/net9.0/Windows.Systems.dll" Pack="true" PackagePath="tools/release/Windows.Systems.dll" Visible="false"/>
+    <Content Include="bin/Release/net9.0/Windows.Systems.xml" Pack="true" PackagePath="tools/release/Windows.Systems.xml" Visible="false"/>
+    <Content Include="build/Windows.Systems.targets" Pack="true" PackagePath="build/Windows.Systems.targets" Visible="false"/>
+  </ItemGroup>
 
 </Project>
