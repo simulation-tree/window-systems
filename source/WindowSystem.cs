@@ -64,11 +64,16 @@ namespace Windows.Systems
 
         void IListener<WindowUpdate>.Receive(ref WindowUpdate message)
         {
-            DestroyWindowsOfDestroyedEntities();
-            CreateMissingWindows();
-
             Span<uint> windowEntities = this.windowEntities.AsSpan();
             Span<uint> windowIds = this.windowIds.AsSpan();
+            DestroyWindowsOfDestroyedEntities(windowEntities, windowIds);
+
+            windowEntities = this.windowEntities.AsSpan();
+            windowIds = this.windowIds.AsSpan();
+            CreateMissingWindows(windowEntities);
+
+            windowEntities = this.windowEntities.AsSpan();
+            windowIds = this.windowIds.AsSpan();
             UpdateWindowsToMatchEntities(windowEntities, windowIds);
             UpdateDestinationSizes(windowEntities, windowIds);
             UpdateEntitiesToMatchWindows(windowEntities, windowIds);
@@ -76,8 +81,10 @@ namespace Windows.Systems
 
         private void CloseRemainingWindows(Span<uint> windowEntities, Span<uint> windowIds)
         {
-            foreach (Chunk chunk in world.Chunks)
+            ReadOnlySpan<Chunk> chunks = world.Chunks;
+            for (int c = 0; c < chunks.Length; c++)
             {
+                Chunk chunk = chunks[c];
                 if (chunk.Definition.ContainsComponent(windowType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
@@ -258,10 +265,12 @@ namespace Windows.Systems
             }
         }
 
-        private void CreateMissingWindows()
+        private void CreateMissingWindows(Span<uint> windowEntities)
         {
-            foreach (Chunk chunk in world.Chunks)
+            ReadOnlySpan<Chunk> chunks = world.Chunks;
+            for (int c = 0; c < chunks.Length; c++)
             {
+                Chunk chunk = chunks[c];
                 if (chunk.Definition.ContainsComponent(windowType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
@@ -272,8 +281,8 @@ namespace Windows.Systems
                         uint windowEntity = entities[i];
                         if (!windowEntities.Contains(windowEntity))
                         {
-                            SDLWindow newWindow = CreateWindow(windowEntity, ref window);
-                            windowEntities.Add(windowEntity);
+                            SDLWindow newWindow = CreateSDLWindow(windowEntity, ref window);
+                            this.windowEntities.Add(windowEntity);
                             windowIds.Add(newWindow.ID);
 
                             (int x, int y) = newWindow.GetRealPosition();
@@ -288,9 +297,11 @@ namespace Windows.Systems
 
         private void UpdateWindowsToMatchEntities(Span<uint> windowEntities, Span<uint> windowIds)
         {
-            Span<SDLWindowState> lastWindowStates = this.lastWindowStates.AsSpan();
-            foreach (Chunk chunk in world.Chunks)
+            ReadOnlySpan<Chunk> chunks = world.Chunks;
+            Span<SDLWindowState> lastWindowStatesSpan = lastWindowStates.AsSpan();
+            for (int c = 0; c < chunks.Length; c++)
             {
+                Chunk chunk = chunks[c];
                 if (chunk.Definition.ContainsComponent(windowType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
@@ -319,7 +330,7 @@ namespace Windows.Systems
                         }
 
                         //do the updating
-                        ref SDLWindowState lastState = ref lastWindowStates[index];
+                        ref SDLWindowState lastState = ref lastWindowStatesSpan[index];
                         UpdateWindowToMatchEntity(windowEntity, ref window, ref lastState, sdlWindow);
                     }
                 }
@@ -331,8 +342,10 @@ namespace Windows.Systems
         /// </summary>
         private void UpdateDestinationSizes(Span<uint> windowEntities, Span<uint> windowIds)
         {
-            foreach (Chunk chunk in world.Chunks)
+            ReadOnlySpan<Chunk> chunks = world.Chunks;
+            for (int c = 0; c < chunks.Length; c++)
             {
+                Chunk chunk = chunks[c];
                 Definition key = chunk.Definition;
                 if (key.ContainsComponent(windowType) && key.ContainsComponent(destinationType))
                 {
@@ -359,9 +372,9 @@ namespace Windows.Systems
             }
         }
 
-        private void DestroyWindowsOfDestroyedEntities()
+        private void DestroyWindowsOfDestroyedEntities(Span<uint> windowEntities, Span<uint> windowIds)
         {
-            for (int i = windowEntities.Count - 1; i >= 0; i--)
+            for (int i = windowEntities.Length - 1; i >= 0; i--)
             {
                 uint windowEntity = windowEntities[i];
                 if (!world.ContainsEntity(windowEntity))
@@ -369,15 +382,15 @@ namespace Windows.Systems
                     SDLWindow sdlWindow = sdlLibrary.GetWindow(windowIds[i]);
                     sdlWindow.Dispose();
 
-                    windowEntities.RemoveAt(i);
-                    windowIds.RemoveAt(i);
+                    this.windowEntities.RemoveAt(i);
+                    this.windowIds.RemoveAt(i);
                     lastWindowStates.RemoveAt(i);
                     Trace.WriteLine($"Destroyed SDL window for entity `{windowEntity}`");
                 }
             }
         }
 
-        private SDLWindow CreateWindow(uint windowEntity, ref IsWindow window)
+        private SDLWindow CreateSDLWindow(uint windowEntity, ref IsWindow window)
         {
             SDL_WindowFlags flags = default;
             if ((window.windowFlags & WindowFlags.Borderless) != 0)
@@ -579,9 +592,9 @@ namespace Windows.Systems
             //make sure name of window matches entity
             if (!window.title.Equals(sdlWindow.Title))
             {
-                Span<char> buffer = stackalloc char[window.title.Length];
-                window.title.CopyTo(buffer);
-                sdlWindow.Title = buffer.ToString();
+                Span<char> title = stackalloc char[window.title.Length];
+                window.title.CopyTo(title);
+                sdlWindow.SetTitle(title);
             }
 
             lastState.flags = window.windowFlags;
@@ -608,6 +621,7 @@ namespace Windows.Systems
                 displayEntities.Add(displayId, displayEntity);
             }
 
+            //todo: this could be cached?
             return ref world.GetComponent<IsDisplay>(displayEntity, displayType);
         }
     }

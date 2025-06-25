@@ -23,7 +23,7 @@ namespace SDL3
 
         public readonly ReadOnlySpan<char> Title
         {
-            get => SDL_GetWindowTitle(window) ?? default;
+            get => SDL_GetWindowTitle(window) ?? default; 
             set => SDL_SetWindowTitle(window, value);
         }
 
@@ -179,6 +179,13 @@ namespace SDL3
             ThrowIfDisposed();
 
             SDL_DestroyWindow(window);
+        }
+
+        public readonly void SetTitle(ReadOnlySpan<char> title)
+        {
+            ThrowIfDisposed();
+
+            SDL_SetWindowTitle(window, title);
         }
 
         public readonly void Maximize()
