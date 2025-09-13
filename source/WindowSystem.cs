@@ -85,7 +85,7 @@ namespace Windows.Systems
             for (int c = 0; c < chunks.Length; c++)
             {
                 Chunk chunk = chunks[c];
-                if (chunk.Definition.ContainsComponent(windowType))
+                if (chunk.componentTypes.Contains(windowType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
@@ -271,7 +271,7 @@ namespace Windows.Systems
             for (int c = 0; c < chunks.Length; c++)
             {
                 Chunk chunk = chunks[c];
-                if (chunk.Definition.ContainsComponent(windowType))
+                if (chunk.componentTypes.Contains(windowType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
@@ -302,7 +302,7 @@ namespace Windows.Systems
             for (int c = 0; c < chunks.Length; c++)
             {
                 Chunk chunk = chunks[c];
-                if (chunk.Definition.ContainsComponent(windowType))
+                if (chunk.componentTypes.Contains(windowType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
@@ -346,8 +346,7 @@ namespace Windows.Systems
             for (int c = 0; c < chunks.Length; c++)
             {
                 Chunk chunk = chunks[c];
-                Definition key = chunk.Definition;
-                if (key.ContainsComponent(windowType) && key.ContainsComponent(destinationType))
+                if (chunk.componentTypes.Contains(windowType) && chunk.componentTypes.Contains(destinationType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<IsDestination> destinationComponents = chunk.GetComponents<IsDestination>(destinationType);
