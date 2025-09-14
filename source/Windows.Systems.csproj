@@ -17,6 +17,7 @@
     <RepositoryUrl>https://github.com/simulation-tree/window-systems</RepositoryUrl>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <OutDir>bin/$(TargetFramework)/$(Configuration)</OutDir>
+    <PackageId>SimulationTree.Windows.Systems</PackageId>
   </PropertyGroup>
 
   <ItemGroup>
