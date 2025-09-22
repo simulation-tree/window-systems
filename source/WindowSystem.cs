@@ -1,5 +1,5 @@
 ﻿using Collections.Generic;
-using Rendering;
+using Rendering.Arrays;
 using Rendering.Components;
 using SDL3;
 using Simulation;
@@ -85,7 +85,7 @@ namespace Windows.Systems
             for (int c = 0; c < chunks.Length; c++)
             {
                 Chunk chunk = chunks[c];
-                if (chunk.componentTypes.Contains(windowType))
+                if (chunk.ComponentTypes.Contains(windowType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
@@ -271,7 +271,7 @@ namespace Windows.Systems
             for (int c = 0; c < chunks.Length; c++)
             {
                 Chunk chunk = chunks[c];
-                if (chunk.componentTypes.Contains(windowType))
+                if (chunk.ComponentTypes.Contains(windowType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
@@ -302,7 +302,7 @@ namespace Windows.Systems
             for (int c = 0; c < chunks.Length; c++)
             {
                 Chunk chunk = chunks[c];
-                if (chunk.componentTypes.Contains(windowType))
+                if (chunk.ComponentTypes.Contains(windowType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<IsWindow> components = chunk.GetComponents<IsWindow>(windowType);
@@ -346,7 +346,7 @@ namespace Windows.Systems
             for (int c = 0; c < chunks.Length; c++)
             {
                 Chunk chunk = chunks[c];
-                if (chunk.componentTypes.Contains(windowType) && chunk.componentTypes.Contains(destinationType))
+                if (chunk.ComponentTypes.Contains(windowType) && chunk.ComponentTypes.Contains(destinationType))
                 {
                     ReadOnlySpan<uint> entities = chunk.Entities;
                     ComponentEnumerator<IsDestination> destinationComponents = chunk.GetComponents<IsDestination>(destinationType);
